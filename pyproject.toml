@@ -1,0 +1,41 @@
+[tool.poetry]
+name = "async-service"
+version = "0.1.0"
+description = ""
+authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
+readme = "README.md"
+packages = [{include = "async_service"}]
+
+[tool.poetry.dependencies]
+python = ">=3.8,<3.12"
+prometheus_client = ">=0.17.1,<0.18.0"
+fastapi = ">=0.100.1,<0.101.0"
+gunicorn = ">=21.2.0,<21.3.0"
+uvicorn = ">=0.23.2,<0.24.0"
+orjson = ">=3.9.2,<3.10.0"
+starlette = ">=0.27.0,<0.28.0"
+pydantic = ">=1.10.12,<1.11.0"
+
+nats-py = { version = ">=2.3.1,<2.4.0", optional = true }
+aiohttp = { version = ">=3.8.5,<3.9.0", optional = true }
+boto3 =  { version = ">=1.28.16,<1.29.0", optional = true }
+
+[tool.poetry.extras]
+nats = ["nats-py", "aiohttp"]
+sqs = ["psycopg2"]
+
+[tool.poetry.dev-dependencies]
+pre-commit = ">=3.3.3,<3.4.0"
+poetry = ">=1.5.1,<1.6.0"
+
+[tool.black]
+line-length = 88
+safe = true
+target_version = ["py38", "py39", "py310"]
+
+[tool.isort]
+profile = "black"
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"

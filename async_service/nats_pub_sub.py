@@ -1,0 +1,155 @@
+from contextlib import asynccontextmanager
+from typing import AsyncIterator, Optional
+
+from nats import connect
+from nats.errors import TimeoutError as NatsTimeoutError
+from nats.js import JetStreamContext
+from nats.js.api import ConsumerConfig, RetentionPolicy, StorageType, StreamConfig
+from nats.js.errors import BadRequestError
+
+from async_service.logger import logger
+from async_service.types import (
+    Input,
+    InputFetchAckFailure,
+    InputMessageFetchFailure,
+    NATSInputConfig,
+    NATSOutputConfig,
+    Output,
+    SerializedInputMessage,
+    SerializedOutputMessage,
+)
+
+
+def _get_work_queue_subject_pattern(root_subject: str):
+    return f"{root_subject}.queue.>"
+
+
+def _get_result_store_subject_pattern(root_subject: str):
+    return f"{root_subject}.result.>"
+
+
+def _get_work_queue_stream_config(root_subject: str) -> StreamConfig:
+    return StreamConfig(
+        name=f"{root_subject}-queue",
+        subjects=[_get_work_queue_subject_pattern(root_subject)],
+        retention=RetentionPolicy.WORK_QUEUE,
+        storage=StorageType.FILE,
+    )
+
+
+def _get_result_store_stream_config(root_subject: str) -> StreamConfig:
+    return StreamConfig(
+        name=f"{root_subject}-result",
+        subjects=[_get_result_store_subject_pattern(root_subject)],
+        retention=RetentionPolicy.LIMITS,
+        storage=StorageType.FILE,
+        max_age=7 * 24 * 60 * 60,
+        max_msgs_per_subject=1,
+    )
+
+
+def _get_worker_consumer_config(
+    root_subject: str,
+    ack_wait: float = 25,
+) -> ConsumerConfig:
+    return ConsumerConfig(
+        durable_name=f"{root_subject}-worker",
+        ack_wait=ack_wait,
+    )
+
+
+class NATSInput(Input):
+    def __init__(self, config: NATSInputConfig):
+        self._nats_url = config.nats_url
+        self._root_subject = config.root_subject
+        self._ack_wait = config.visibility_timeout
+        self._js = None
+        self._psub = None
+
+    async def initialize_stream(self):
+        await _initialize_stream(
+            jetstream=await self._get_js_client(),
+            stream_config=_get_work_queue_stream_config(self._root_subject),
+        )
+
+    async def _get_js_client(self):
+        if self._js:
+            return self._js
+        self._js = (await connect(self._nats_url)).jetstream(timeout=10)
+        return self._js
+
+    async def _get_psub(self):
+        if self._psub:
+            return self._psub
+        jetstream = await self._get_js_client()
+        self._psub = await jetstream.pull_subscribe(
+            subject=_get_work_queue_subject_pattern(self._root_subject),
+            durable=f"{self._root_subject}-worker",
+            config=_get_worker_consumer_config(
+                self._root_subject, ack_wait=self._ack_wait
+            ),
+        )
+        return self._psub
+
+    @asynccontextmanager
+    async def get_input_message(
+        self,
+    ) -> AsyncIterator[Optional[SerializedInputMessage]]:
+        psub = await self._get_psub()
+        while True:
+            try:
+                msgs = await psub.fetch(1, timeout=5)
+            except NatsTimeoutError:
+                logger.debug("No message in queue")
+                continue
+            except Exception as ex:
+                raise InputMessageFetchFailure() from ex
+            for msg in msgs:
+                try:
+                    yield msg.data
+                finally:
+                    try:
+                        await msg.ack()
+                    except Exception as ex:
+                        raise InputFetchAckFailure() from ex
+            break
+
+
+class NATSOutput(Output):
+    def __init__(self, config: NATSOutputConfig):
+        self._nats_url = config.nats_url
+        self._js = None
+        self._root_subject = config.root_subject
+
+    async def _get_js_client(self):
+        if self._js:
+            return self._js
+        self._js = (await connect(self._nats_url)).jetstream(timeout=10)
+        return self._js
+
+    async def initialize_stream(self):
+        jetstream = await self._get_js_client()
+        await _initialize_stream(
+            jetstream=jetstream,
+            stream_config=_get_result_store_stream_config(self._root_subject),
+        )
+
+    async def publish_output_message(
+        self, serialized_output_message: SerializedOutputMessage, request_id: str
+    ):
+        jetstream = await self._get_js_client()
+        await jetstream.publish(
+            subject=f"{self._root_subject}.result.{request_id}",
+            payload=serialized_output_message,
+            timeout=5,
+        )
+
+
+async def _initialize_stream(jetstream: JetStreamContext, stream_config: StreamConfig):
+    try:
+        await jetstream.add_stream(stream_config)
+    except BadRequestError as ex:
+        if ex.err_code == 10058:
+            await jetstream.update_stream(stream_config)
+        else:
+            raise ex
