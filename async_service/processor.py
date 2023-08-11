@@ -27,7 +27,7 @@ class Processor(abc.ABC):
         return orjson.dumps(output_message.dict(), option=orjson.OPT_SERIALIZE_NUMPY)
 
     def init(self):
-        ...
+        return
 
     @abc.abstractmethod
     def process(self, input_message: InputMessage) -> OutputMessageBody:

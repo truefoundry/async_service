@@ -24,11 +24,11 @@ if TYPE_CHECKING:
 
 class ProcessorRunner:
     def __init__(
-        self, input_output_config: ProcessorRunnerConfig, processor: Processor
+        self, processor_runner_config: ProcessorRunnerConfig, processor: Processor
     ):
         self._run = True
-        self._input = input_output_config.input_config.to_input()
-        self._output = input_output_config.output_config.to_output()
+        self._input = processor_runner_config.input_config.to_input()
+        self._output = processor_runner_config.output_config.to_output()
         self._processor = processor
         self._healthy = True
         signal.signal(signal.SIGTERM, self.stop)
@@ -98,9 +98,10 @@ class ProcessorRunner:
                 await self._input.initialize_stream()
             if hasattr(self._output, "initialize_stream"):
                 await self._output.initialize_stream()
-
             logger.info("Polling messages")
             while True:
+                if not self._run:
+                    break
                 try:
                     with collect_input_message_fetch_metrics():
                         async with self._input.get_input_message() as serialized_input_message:
@@ -111,8 +112,6 @@ class ProcessorRunner:
                             )
                 except Exception:
                     logger.exception("error raised in the main worker loop")
-                if not self._run:
-                    break
         except Exception as ex:
             logger.exception("worker failed")
             self._healthy = False

@@ -71,7 +71,7 @@ class ProcessorApp:
             logger.info("Starting processor runner")
             loop = asyncio.get_running_loop()
             self._runner = ProcessorRunner(
-                input_output_config=self._processor_runner_config,
+                processor_runner_config=self._processor_runner_config,
                 processor=self._processor,
             )
             loop.create_task(self._runner.run())

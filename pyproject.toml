@@ -27,6 +27,7 @@ sqs = ["boto3"]
 [tool.poetry.dev-dependencies]
 pre-commit = ">=3.3.3,<3.4.0"
 poetry = ">=1.5.1,<1.6.0"
+pytest = ">=7.4.0,<7.5.0"
 
 [tool.black]
 line-length = 88
@@ -35,6 +36,10 @@ target_version = ["py38", "py39", "py310"]
 
 [tool.isort]
 profile = "black"
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+addopts = ["-sv"]
 
 [build-system]
 requires = ["poetry-core>=1.0.0"]
