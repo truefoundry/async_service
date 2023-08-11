@@ -2219,9 +2219,9 @@ testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "p
 
 [extras]
 nats = ["aiohttp", "nats-py"]
-sqs = []
+sqs = ["boto3"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "b2adf1c8aafcecaa63f20a769b7e563432461366810f6df54b9fbe649b664291"
+content-hash = "6ef8c4911ec0e15251a92d2d742d10e344fa3ad7079ae54fed68b4ff77699d00"

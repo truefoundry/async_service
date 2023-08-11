@@ -22,7 +22,7 @@ boto3 =  { version = ">=1.28.16,<1.29.0", optional = true }
 
 [tool.poetry.extras]
 nats = ["nats-py", "aiohttp"]
-sqs = ["psycopg2"]
+sqs = ["boto3"]
 
 [tool.poetry.dev-dependencies]
 pre-commit = ">=3.3.3,<3.4.0"
