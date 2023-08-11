@@ -26,9 +26,10 @@ async def _test_processor_runner():
             input_config=input_config, output_config=output_config
         ),
     )
-    asyncio.create_task(runner.run())
+    task = asyncio.create_task(runner.run())
     await asyncio.sleep(0.5)
     runner.stop()
+    await asyncio.wait_for(task, timeout=1.0)
 
     assert len(messages) > 2
     assert len(messages) == len(output_config.results), len(output_config.results)
