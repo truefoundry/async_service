@@ -17,14 +17,14 @@ from async_service.types import (
 
 class Processor(abc.ABC):
     def input_deserializer(
-        self, serialized_work_request: SerializedInputMessage
+        self, serialized_input_message: SerializedInputMessage
     ) -> InputMessage:
-        return InputMessage(**orjson.loads(serialized_work_request))
+        return InputMessage(**orjson.loads(serialized_input_message))
 
     def output_serializer(
-        self, work_response: OutputMessage
+        self, output_message: OutputMessage
     ) -> SerializedOutputMessage:
-        return orjson.dumps(work_response.dict(), option=orjson.OPT_SERIALIZE_NUMPY)
+        return orjson.dumps(output_message.dict(), option=orjson.OPT_SERIALIZE_NUMPY)
 
     def init(self):
         ...
