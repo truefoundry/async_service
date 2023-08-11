@@ -1,9 +1,11 @@
 from async_service.app import ProcessorApp
 from async_service.processor import Processor
 from async_service.types import (
+    InputConfig,
     InputMessage,
     NATSInputConfig,
     NATSOutputConfig,
+    OutputConfig,
     OutputMessage,
     OutputMessageBody,
     ProcessorRunnerConfig,
@@ -24,4 +26,6 @@ __all__ = [
     "ProcessStatus",
     "SQSInputConfig",
     "SQSOutputConfig",
+    "InputConfig",
+    "OutputConfig",
 ]
