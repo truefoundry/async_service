@@ -94,10 +94,11 @@ class ProcessorRunner:
 
     async def run(self):
         try:
-            if hasattr(self._input, "initialize_stream"):
-                await self._input.initialize_stream()
-            if hasattr(self._output, "initialize_stream"):
-                await self._output.initialize_stream()
+            # Streams should be bootstrapped separately
+            # if hasattr(self._input, "initialize_stream"):
+            #     await self._input.initialize_stream()
+            # if hasattr(self._output, "initialize_stream"):
+            #     await self._output.initialize_stream()
             logger.info("Polling messages")
             while True:
                 if not self._run:

@@ -83,7 +83,9 @@ class SQSInputConfig(InputConfig):
 class NATSInputConfig(InputConfig):
     nats_url: str
     root_subject: str
+    consumer_name: str
     visibility_timeout: float
+    wait_time_seconds: float = 5
 
     def to_input(self) -> Input:
         from async_service.nats_pub_sub import NATSInput

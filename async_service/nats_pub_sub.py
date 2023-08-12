@@ -48,21 +48,13 @@ def _get_result_store_stream_config(root_subject: str) -> StreamConfig:
     )
 
 
-def _get_worker_consumer_config(
-    root_subject: str,
-    ack_wait: float = 25,
-) -> ConsumerConfig:
-    return ConsumerConfig(
-        durable_name=f"{root_subject}-worker",
-        ack_wait=ack_wait,
-    )
-
-
 class NATSInput(Input):
     def __init__(self, config: NATSInputConfig):
         self._nats_url = config.nats_url
         self._root_subject = config.root_subject
         self._ack_wait = config.visibility_timeout
+        self._consumer_name = config.consumer_name
+        self._wait_time_seconds = config.wait_time_seconds
         self._js = None
         self._psub = None
 
@@ -84,9 +76,10 @@ class NATSInput(Input):
         jetstream = await self._get_js_client()
         self._psub = await jetstream.pull_subscribe(
             subject=_get_work_queue_subject_pattern(self._root_subject),
-            durable=f"{self._root_subject}-worker",
-            config=_get_worker_consumer_config(
-                self._root_subject, ack_wait=self._ack_wait
+            durable=self._consumer_name,
+            config=ConsumerConfig(
+                ack_wait=self._ack_wait,
+                durable_name=self._consumer_name,
             ),
         )
         return self._psub
@@ -98,7 +91,7 @@ class NATSInput(Input):
         psub = await self._get_psub()
         while True:
             try:
-                msgs = await psub.fetch(1, timeout=5)
+                msgs = await psub.fetch(1, timeout=self._wait_time_seconds)
             except NatsTimeoutError:
                 logger.debug("No message in queue")
                 continue
