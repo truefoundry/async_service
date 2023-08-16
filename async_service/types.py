@@ -129,7 +129,7 @@ class NATSOutputConfig(OutputConfig):
         return NATSOutput(self)
 
 
-class ProcessorRunnerConfig(BaseModel):
+class WorkerConfig(BaseModel):
     input_config: Union[
         SQSInputConfig,
         NATSInputConfig,

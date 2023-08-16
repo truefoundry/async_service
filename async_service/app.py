@@ -12,8 +12,8 @@ from fastapi.responses import Response
 from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
 from async_service.logger import logger
-from async_service.runner import ProcessorRunner
-from async_service.types import InputMessage, OutputMessage, ProcessorRunnerConfig
+from async_service.types import InputMessage, OutputMessage, WorkerConfig
+from async_service.worker import Worker
 
 if TYPE_CHECKING:
     from async_service.processor import Processor
@@ -29,7 +29,7 @@ def _make_multiprocess_metrics_app():
     return make_asgi_app(registry=registry)
 
 
-_PROCESSOR_RUNNER_CONFIG_ENV_VAR_NAME = "PROCESSOR_RUNNER_CONFIG"
+_WORKER_CONFIG_ENV_VAR_NAME = "TFY_WORKER_CONFIG"
 
 
 class ProcessorApp:
@@ -37,17 +37,14 @@ class ProcessorApp:
         self,
         *,
         processor: Processor,
-        processor_runner_config: Optional[ProcessorRunnerConfig] = None,
+        worker_config: Optional[WorkerConfig] = None,
     ):
         self._processor = processor
-        self._processor_runner_config = processor_runner_config
+        self._worker_config = worker_config
 
-        if (
-            self._processor_runner_config is None
-            and _PROCESSOR_RUNNER_CONFIG_ENV_VAR_NAME in os.environ
-        ):
-            self._processor_runner_config = ProcessorRunnerConfig(
-                **orjson.loads(os.environ[_PROCESSOR_RUNNER_CONFIG_ENV_VAR_NAME])
+        if self._worker_config is None and _WORKER_CONFIG_ENV_VAR_NAME in os.environ:
+            self._worker_config = WorkerConfig(
+                **orjson.loads(os.environ[_WORKER_CONFIG_ENV_VAR_NAME])
             )
 
         self._app = FastAPI(lifespan=self._lifespan, docs_url="/")
@@ -60,21 +57,21 @@ class ProcessorApp:
         else:
             self._app.mount("/metrics", make_asgi_app())
 
-        self._runner = None
+        self._worker = None
 
     @asynccontextmanager
     async def _lifespan(self, app: FastAPI):
         logger.info("Invoking the processor init method")
         self._processor.init()
         logger.info("Processor init method execution completed")
-        if self._processor_runner_config:
+        if self._worker_config:
             logger.info("Starting processor runner")
             loop = asyncio.get_running_loop()
-            self._runner = ProcessorRunner(
-                processor_runner_config=self._processor_runner_config,
+            self._worker = Worker(
+                worker_config=self._worker_config,
                 processor=self._processor,
             )
-            loop.create_task(self._runner.run())
+            loop.create_task(self._worker.run())
             logger.info("Started processor runner")
         else:
             logger.warning(
@@ -88,7 +85,7 @@ class ProcessorApp:
         return ""
 
     def _healthy_route_handler(self):
-        if self._runner and not self._runner.healthy:
+        if self._worker and not self._worker.healthy:
             raise HTTPException(status_code=500, detail="Worker not healthy")
         return ""
 

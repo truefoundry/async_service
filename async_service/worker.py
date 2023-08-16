@@ -13,22 +13,20 @@ from async_service.prometheus_metrics import (
 )
 from async_service.types import (
     OutputMessage,
-    ProcessorRunnerConfig,
     ProcessStatus,
     SerializedOutputMessage,
+    WorkerConfig,
 )
 
 if TYPE_CHECKING:
     from async_service.processor import Processor
 
 
-class ProcessorRunner:
-    def __init__(
-        self, processor_runner_config: ProcessorRunnerConfig, processor: Processor
-    ):
+class Worker:
+    def __init__(self, worker_config: WorkerConfig, processor: Processor):
         self._run = True
-        self._input = processor_runner_config.input_config.to_input()
-        self._output = processor_runner_config.output_config.to_output()
+        self._input = worker_config.input_config.to_input()
+        self._output = worker_config.output_config.to_output()
         self._processor = processor
         self._healthy = True
         signal.signal(signal.SIGTERM, self.stop)

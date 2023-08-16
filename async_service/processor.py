@@ -9,9 +9,9 @@ from async_service.types import (
     InputMessage,
     OutputMessage,
     OutputMessageBody,
-    ProcessorRunnerConfig,
     SerializedInputMessage,
     SerializedOutputMessage,
+    WorkerConfig,
 )
 
 
@@ -33,9 +33,5 @@ class Processor(abc.ABC):
     def process(self, input_message: InputMessage) -> OutputMessageBody:
         ...
 
-    def build_app(
-        self, processor_runner_config: Optional[ProcessorRunnerConfig] = None
-    ) -> FastAPI:
-        return ProcessorApp(
-            processor=self, processor_runner_config=processor_runner_config
-        ).app
+    def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
+        return ProcessorApp(processor=self, worker_config=worker_config).app

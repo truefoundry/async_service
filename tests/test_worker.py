@@ -2,8 +2,8 @@ import asyncio
 
 import orjson
 
-from async_service import InputMessage, OutputMessage, Processor, ProcessorRunnerConfig
-from async_service.runner import ProcessorRunner
+from async_service import InputMessage, OutputMessage, Processor, WorkerConfig
+from async_service.worker import Worker
 from tests.dummy_input_output import DummyInputConfig, DummyOutputConfig
 
 
@@ -20,9 +20,9 @@ async def _test_processor_runner():
     ]
     input_config = DummyInputConfig(messages=messages)
     output_config = DummyOutputConfig(results=[])
-    runner = ProcessorRunner(
+    runner = Worker(
         processor=DummyProcessor(),
-        processor_runner_config=ProcessorRunnerConfig(
+        worker_config=WorkerConfig(
             input_config=input_config, output_config=output_config
         ),
     )

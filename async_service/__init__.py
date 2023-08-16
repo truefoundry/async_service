@@ -10,12 +10,12 @@ from async_service.types import (
     OutputConfig,
     OutputMessage,
     OutputMessageBody,
-    ProcessorRunnerConfig,
     ProcessStatus,
     SerializedInputMessage,
     SerializedOutputMessage,
     SQSInputConfig,
     SQSOutputConfig,
+    WorkerConfig,
 )
 
 __all__ = [
@@ -26,7 +26,7 @@ __all__ = [
     "NATSOutputConfig",
     "OutputMessage",
     "OutputMessageBody",
-    "ProcessorRunnerConfig",
+    "WorkerConfig",
     "ProcessStatus",
     "SQSInputConfig",
     "SQSOutputConfig",
