@@ -66,6 +66,8 @@ class AWSAccessKeyAuth(BaseModel):
 
 
 class SQSInputConfig(InputConfig):
+    type: constr(regex=r"^sqs$") = "sqs"
+
     queue_url: str
     region_name: Optional[str] = None
 
@@ -81,6 +83,8 @@ class SQSInputConfig(InputConfig):
 
 
 class NATSInputConfig(InputConfig):
+    type: constr(regex=r"^nats$") = "nats"
+
     nats_url: str
     root_subject: str
     consumer_name: str
@@ -108,6 +112,8 @@ class OutputConfig(abc.ABC, BaseModel):
 
 
 class SQSOutputConfig(OutputConfig):
+    type: constr(regex=r"^sqs$") = "sqs"
+
     queue_url: str
     region_name: Optional[str] = None
 
@@ -120,6 +126,8 @@ class SQSOutputConfig(OutputConfig):
 
 
 class NATSOutputConfig(OutputConfig):
+    type: constr(regex=r"^nats$") = "nats"
+
     nats_url: str
     root_subject: str
 
