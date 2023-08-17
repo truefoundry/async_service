@@ -1,7 +1,7 @@
 # Async Service
 
 ## Install
-```shell
+```console
 pip install "async_service[sqs] @ git+https://github.com/truefoundry/async_service.git@main"
 ```
 
@@ -37,12 +37,12 @@ app = MultiplicationProcessor().build_app(
 ```
 
 ### Run the app
-```shell
+```console
 gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
 ```
 
 Output:
-```shell
+```console
 ✦6 ❯ gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
 [2023-08-17 16:10:33 +0530] [78736] [INFO] Starting gunicorn 21.2.0
 [2023-08-17 16:10:33 +0530] [78736] [INFO] Listening at: http://127.0.0.1:8000 (78736)
@@ -59,12 +59,12 @@ Output:
 ```
 
 ### Send a synchronus process request
-```shell
+```console
 curl 'http://localhost:8000/process' -H 'Content-Type: application/json'  -d '{"request_id": "abc", "body": {"x": 1, "y": 2}}'
 ```
 
 Output:
-```shell
+```console
 ❯ curl 'http://localhost:8000/process' -H 'Content-Type: application/json'  -d '{"request_id": "abc", "body": {"x": 1, "y": 2}}'
 {"request_id":"abc","status":"SUCCESS","body":2,"error":null}
 ```
@@ -111,12 +111,12 @@ if __name__ == "__main__":
 ```
 
 Run the above python script
-```shell
+```console
 python send_async_request.py
 ```
 
 Output:
-```shell
+```console
 ❯ python send_async_request.py
 request_id='46a4ebc6-afdb-46a0-8587-ba29abf0f0d4' status='SUCCESS' body=2 error=None
 ```
