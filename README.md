@@ -41,10 +41,34 @@ app = MultiplicationProcessor().build_app(
 gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
 ```
 
+Output:
+```shell
+✦6 ❯ gunicorn app:app --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000
+[2023-08-17 16:10:33 +0530] [78736] [INFO] Starting gunicorn 21.2.0
+[2023-08-17 16:10:33 +0530] [78736] [INFO] Listening at: http://127.0.0.1:8000 (78736)
+[2023-08-17 16:10:33 +0530] [78736] [INFO] Using worker: uvicorn.workers.UvicornWorker
+[2023-08-17 16:10:33 +0530] [78738] [INFO] Booting worker with pid: 78738
+[2023-08-17 16:10:33 +0530] [78738] [INFO] Started server process [78738]
+[2023-08-17 16:10:33 +0530] [78738] [INFO] Waiting for application startup.
+2023-08-17 16:10:33,764 - app - INFO - Invoking the processor init method
+2023-08-17 16:10:33,765 - app - INFO - Processor init method execution completed
+2023-08-17 16:10:33,765 - app - INFO - Starting processor runner
+2023-08-17 16:10:34,461 - app - INFO - Started processor runner
+2023-08-17 16:10:34,462 - app - INFO - Polling messages
+[2023-08-17 16:10:34 +0530] [78738] [INFO] Application startup complete.
+```
+
 ### Send a synchronus process request
 ```shell
 curl 'http://localhost:8000/process' -H 'Content-Type: application/json'  -d '{"request_id": "abc", "body": {"x": 1, "y": 2}}'
 ```
+
+Output:
+```shell
+❯ curl 'http://localhost:8000/process' -H 'Content-Type: application/json'  -d '{"request_id": "abc", "body": {"x": 1, "y": 2}}'
+{"request_id":"abc","status":"SUCCESS","body":2,"error":null}
+```
+
 * A FastAPI documentation dashboard will be available on http://localhost
 
 ### Send an asynchronus process request
@@ -89,4 +113,10 @@ if __name__ == "__main__":
 Run the above python script
 ```shell
 python send_async_request.py
+```
+
+Output:
+```shell
+❯ python send_async_request.py
+request_id='46a4ebc6-afdb-46a0-8587-ba29abf0f0d4' status='SUCCESS' body=2 error=None
 ```
