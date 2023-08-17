@@ -12,7 +12,7 @@ from fastapi.responses import Response
 from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
 from async_service.logger import logger
-from async_service.types import InputMessage, OutputMessage, WorkerConfig
+from async_service.types import InputMessage, OutputMessage, ProcessStatus, WorkerConfig
 from async_service.worker import Worker
 
 if TYPE_CHECKING:
@@ -79,7 +79,9 @@ class ProcessorApp:
                 "Only `/process` API will be available."
             )
         yield
-        multiprocess.mark_process_dead(os.getpid())
+
+        if os.getenv("PROMETHEUS_MULTIPROC_DIR"):
+            multiprocess.mark_process_dead(os.getpid())
 
     def _ready_route_handler(self):
         return ""
@@ -96,7 +98,13 @@ class ProcessorApp:
         logger.info("Time taken to process request: %f seconds", time_taken_for_request)
 
         return Response(
-            content=self._processor.output_serializer(output),
+            content=self._processor.output_serializer(
+                OutputMessage(
+                    request_id=body.request_id,
+                    body=output,
+                    status=ProcessStatus.SUCCESS,
+                )
+            ),
         )
 
     @property
