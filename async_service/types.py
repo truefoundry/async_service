@@ -3,7 +3,7 @@ import enum
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional, TypeVar, Union
 
-from pydantic import BaseModel, constr
+from pydantic import BaseModel, confloat, conint, constr
 
 
 class ProcessStatus(str, enum.Enum):
@@ -18,7 +18,7 @@ SerializedOutputMessage = TypeVar("SerializedOutputMessage", bound=Union[str, by
 
 
 class InputMessage(BaseModel):
-    request_id: constr(min_length=1)
+    request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: InputMessageBody
 
     class Config:
@@ -73,8 +73,8 @@ class SQSInputConfig(InputConfig):
 
     auth: Optional[AWSAccessKeyAuth] = None
 
-    visibility_timeout: int
-    wait_time_seconds: float = 19
+    visibility_timeout: conint(gt=0, le=43200)
+    wait_time_seconds: confloat(ge=1, le=20) = 19
 
     def to_input(self) -> Input:
         from async_service.sqs_pub_sub import SQSInput
@@ -87,9 +87,9 @@ class NATSInputConfig(InputConfig):
 
     nats_url: str
     root_subject: str
-    consumer_name: str
-    visibility_timeout: float
-    wait_time_seconds: float = 5
+    consumer_name: constr(regex=r"^[a-z0-9\-]{1,32}$")
+    visibility_timeout: confloat(ge=1)
+    wait_time_seconds: confloat(ge=1) = 5
 
     def to_input(self) -> Input:
         from async_service.nats_pub_sub import NATSInput

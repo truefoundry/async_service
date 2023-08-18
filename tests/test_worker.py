@@ -1,4 +1,5 @@
 import asyncio
+import uuid
 
 import orjson
 
@@ -14,8 +15,8 @@ class DummyProcessor(Processor):
 
 async def _test_processor_runner():
     messages = [
-        InputMessage(request_id="1", body="1"),
-        InputMessage(request_id="2", body="2"),
+        InputMessage(request_id=str(uuid.uuid4()), body="1"),
+        InputMessage(request_id=uuid.uuid4().hex, body="2"),
         InputMessage(request_id="3", body="3"),
     ]
     input_config = DummyInputConfig(messages=messages)
