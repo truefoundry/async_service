@@ -1,7 +1,7 @@
 import abc
 import enum
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, Optional, TypeVar, Union
+from typing import Any, AsyncIterator, List, Optional, Union
 
 from pydantic import BaseModel, confloat, conint, constr
 
@@ -12,21 +12,15 @@ class ProcessStatus(str, enum.Enum):
     SUCCESS = "SUCCESS"
 
 
-InputMessageBody = TypeVar("InputMessageBody")
-OutputMessageBody = TypeVar("OutputMessageBody")
-SerializedInputMessage = TypeVar("SerializedInputMessage", bound=Union[str, bytes])
-SerializedOutputMessage = TypeVar("SerializedOutputMessage", bound=Union[str, bytes])
-
-
 class InputMessage(BaseModel):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
-    body: InputMessageBody
+    body: Any
 
 
 class OutputMessage(BaseModel):
     request_id: str
     status: ProcessStatus
-    body: OutputMessageBody
+    body: Optional[Any] = None
     error: Optional[str] = None
 
     class Config:
@@ -46,7 +40,7 @@ class Input(abc.ABC):
     @abc.abstractmethod
     async def get_input_message(
         self,
-    ) -> AsyncIterator[Optional[SerializedInputMessage]]:
+    ) -> AsyncIterator[Optional[Union[str, bytes]]]:
         ...
 
 
@@ -85,7 +79,7 @@ class SQSInputConfig(InputConfig):
 class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
-    nats_url: str
+    nats_url: Union[str, List[str]]
     root_subject: str
     consumer_name: constr(regex=r"^[a-z0-9\-]{1,32}$")
     visibility_timeout: confloat(ge=1)
@@ -100,7 +94,7 @@ class NATSInputConfig(InputConfig):
 class Output(abc.ABC):
     @abc.abstractmethod
     async def publish_output_message(
-        self, serialized_output_message: SerializedOutputMessage, request_id: str
+        self, serialized_output_message: bytes, request_id: str
     ):
         ...
 
@@ -131,7 +125,7 @@ class SQSOutputConfig(OutputConfig):
 class NATSOutputConfig(OutputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
-    nats_url: str
+    nats_url: Union[str, List[str]]
     root_subject: str
 
     def to_output(self) -> Output:

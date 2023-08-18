@@ -10,8 +10,6 @@ from async_service.types import (
     InputFetchAckFailure,
     InputMessageFetchFailure,
     Output,
-    SerializedInputMessage,
-    SerializedOutputMessage,
     SQSInputConfig,
     SQSOutputConfig,
 )
@@ -31,7 +29,7 @@ class SQSInput(Input):
     @asynccontextmanager
     async def get_input_message(
         self,
-    ) -> AsyncIterator[Optional[SerializedInputMessage]]:
+    ) -> AsyncIterator[Optional[str]]:
         while True:
             try:
                 # Move this to its own thread and queue model later
@@ -76,7 +74,7 @@ class SQSOutput(Output):
         )
 
     async def publish_output_message(
-        self, serialized_output_message: SerializedOutputMessage, request_id: str
+        self, serialized_output_message: bytes, request_id: str
     ):
         await run_in_threadpool(
             self._sqs.send_message,

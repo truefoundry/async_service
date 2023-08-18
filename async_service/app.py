@@ -91,7 +91,7 @@ class ProcessorApp:
             raise HTTPException(status_code=500, detail="Worker not healthy")
         return ""
 
-    def _process_route_handler(self, body: InputMessage) -> OutputMessage:
+    def _process_route_handler(self, body: InputMessage) -> Response:
         start = time.perf_counter()
         output = self._processor.process(body)
         time_taken_for_request = time.perf_counter() - start

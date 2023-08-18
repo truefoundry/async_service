@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import signal
-from typing import TYPE_CHECKING, Union
+from typing import TYPE_CHECKING, Optional, Union
 
 from starlette.concurrency import run_in_threadpool
 
@@ -11,12 +11,7 @@ from async_service.prometheus_metrics import (
     collect_output_message_publish_metrics,
     collect_total_message_processing_metrics,
 )
-from async_service.types import (
-    OutputMessage,
-    ProcessStatus,
-    SerializedOutputMessage,
-    WorkerConfig,
-)
+from async_service.types import InputMessage, OutputMessage, ProcessStatus, WorkerConfig
 
 if TYPE_CHECKING:
     from async_service.processor import Processor
@@ -42,7 +37,7 @@ class Worker:
         return self._healthy
 
     async def _publish_response(
-        self, serialized_output_message: SerializedOutputMessage, request_id: str
+        self, serialized_output_message: bytes, request_id: str
     ):
         with collect_output_message_publish_metrics():
             await self._output.publish_output_message(
@@ -54,8 +49,8 @@ class Worker:
         self,
         serialized_input_message: Union[str, bytes],
     ):
-        serialized_output_message = None
-        input_message = None
+        serialized_output_message: Optional[bytes] = None
+        input_message: Optional[InputMessage] = None
         with collect_total_message_processing_metrics():
             try:
                 input_message = self._processor.input_deserializer(
@@ -64,7 +59,6 @@ class Worker:
                 result = await run_in_threadpool(self._processor.process, input_message)
                 output_message = OutputMessage(
                     status=ProcessStatus.SUCCESS,
-                    input_data=input_message,
                     request_id=input_message.request_id,
                     body=result,
                 )
@@ -73,18 +67,18 @@ class Worker:
                 )
             except Exception as ex:
                 logger.exception("error raised while handling message")
-                output_message = OutputMessage(
-                    status=ProcessStatus.FAILED,
-                    input_data=input_message,
-                    request_id=input_message.request_id,
-                    error=str(ex),
-                )
-                serialized_output_message = self._processor.output_serializer(
-                    output_message
-                )
+                if input_message:
+                    output_message = OutputMessage(
+                        status=ProcessStatus.FAILED,
+                        request_id=input_message.request_id,
+                        error=str(ex),
+                    )
+                    serialized_output_message = self._processor.output_serializer(
+                        output_message
+                    )
                 raise ex
             finally:
-                if input_message:
+                if serialized_output_message and input_message:
                     await self._publish_response(
                         serialized_output_message=serialized_output_message,
                         request_id=input_message.request_id,

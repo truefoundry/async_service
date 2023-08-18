@@ -6,15 +6,7 @@ from typing import AsyncIterator, List, Optional, Tuple
 
 import orjson
 
-from async_service import (
-    Input,
-    InputConfig,
-    InputMessage,
-    Output,
-    OutputConfig,
-    SerializedInputMessage,
-    SerializedOutputMessage,
-)
+from async_service import Input, InputConfig, InputMessage, Output, OutputConfig
 
 
 class DummyInputConfig(InputConfig):
@@ -31,7 +23,7 @@ class DummyInput(Input):
     @asynccontextmanager
     async def get_input_message(
         self,
-    ) -> AsyncIterator[Optional[SerializedInputMessage]]:
+    ) -> AsyncIterator[Optional[bytes]]:
         await asyncio.sleep(0.01)
         if len(self._config.messages) > 0:
             yield orjson.dumps(self._config.messages.pop(0).dict())
@@ -44,14 +36,14 @@ class DummyOutput(Output):
         self._config = config
 
     async def publish_output_message(
-        self, serialized_output_message: SerializedOutputMessage, request_id: str
+        self, serialized_output_message: bytes, request_id: str
     ):
         await asyncio.sleep(0.01)
         self._config.results.append((serialized_output_message, request_id))
 
 
 class DummyOutputConfig(OutputConfig):
-    results: List[Tuple[SerializedOutputMessage, str]]
+    results: List[Tuple[bytes, str]]
 
     class Config:
         copy_on_model_validation = False

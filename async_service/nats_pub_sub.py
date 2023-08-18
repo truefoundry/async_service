@@ -15,8 +15,6 @@ from async_service.types import (
     NATSInputConfig,
     NATSOutputConfig,
     Output,
-    SerializedInputMessage,
-    SerializedOutputMessage,
 )
 
 
@@ -87,7 +85,7 @@ class NATSInput(Input):
     @asynccontextmanager
     async def get_input_message(
         self,
-    ) -> AsyncIterator[Optional[SerializedInputMessage]]:
+    ) -> AsyncIterator[Optional[bytes]]:
         psub = await self._get_psub()
         while True:
             try:
@@ -128,7 +126,7 @@ class NATSOutput(Output):
         )
 
     async def publish_output_message(
-        self, serialized_output_message: SerializedOutputMessage, request_id: str
+        self, serialized_output_message: bytes, request_id: str
     ):
         jetstream = await self._get_js_client()
         await jetstream.publish(
