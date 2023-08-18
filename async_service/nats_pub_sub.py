@@ -19,11 +19,11 @@ from async_service.types import (
 
 
 def _get_work_queue_subject_pattern(root_subject: str):
-    return f"{root_subject}.queue.>"
+    return f"{root_subject}.>"
 
 
 def _get_result_store_subject_pattern(root_subject: str):
-    return f"{root_subject}.result.>"
+    return f"{root_subject}.>"
 
 
 def _get_work_queue_stream_config(root_subject: str) -> StreamConfig:
@@ -130,7 +130,7 @@ class NATSOutput(Output):
     ):
         jetstream = await self._get_js_client()
         await jetstream.publish(
-            subject=f"{self._root_subject}.result.{request_id}",
+            subject=f"{self._root_subject}.{request_id}",
             payload=serialized_output_message,
             timeout=5,
         )
