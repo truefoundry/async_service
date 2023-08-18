@@ -54,6 +54,9 @@ class Input(abc.ABC):
 
 
 class InputConfig(abc.ABC, BaseModel):
+    class Config:
+        frozen = True
+
     @abc.abstractmethod
     def to_input(self) -> Input:
         ...
@@ -106,6 +109,9 @@ class Output(abc.ABC):
 
 
 class OutputConfig(abc.ABC, BaseModel):
+    class Config:
+        frozen = True
+
     @abc.abstractmethod
     def to_output(self) -> Output:
         ...
