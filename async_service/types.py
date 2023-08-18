@@ -6,6 +6,7 @@ from typing import AsyncIterator, Optional, TypeVar, Union
 from pydantic import BaseModel, confloat, conint, constr
 
 
+@enum.unique
 class ProcessStatus(str, enum.Enum):
     FAILED = "FAILED"
     SUCCESS = "SUCCESS"
