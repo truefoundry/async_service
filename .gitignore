@@ -1,3 +1,5 @@
 venv/
 .venv/
 *.pyc
+.pytest_cache/
+.ruff_cache/
