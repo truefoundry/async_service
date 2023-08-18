@@ -22,9 +22,6 @@ class InputMessage(BaseModel):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: InputMessageBody
 
-    class Config:
-        arbitrary_types_allowed = True
-
 
 class OutputMessage(BaseModel):
     request_id: str
@@ -34,7 +31,6 @@ class OutputMessage(BaseModel):
 
     class Config:
         use_enum_values = True
-        arbitrary_types_allowed = True
 
 
 class InputMessageFetchFailure(Exception):
