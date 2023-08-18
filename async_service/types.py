@@ -68,7 +68,7 @@ class SQSInputConfig(InputConfig):
     auth: Optional[AWSAccessKeyAuth] = None
 
     visibility_timeout: conint(gt=0, le=43200)
-    wait_time_seconds: confloat(ge=1, le=20) = 19
+    wait_time_seconds: conint(ge=1, le=20) = 19
 
     def to_input(self) -> Input:
         from async_service.sqs_pub_sub import SQSInput
