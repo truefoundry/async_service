@@ -10,7 +10,7 @@ on:
 jobs:
   test:
     concurrency:
-      group: ${{ github.workflow }}-t-${{ github.ref }}
+      group: ${{ github.workflow }}-t-${{ matrix.os }}-${{ matrix.python-version }}-${{ github.head_ref || github.ref }}
       cancel-in-progress: true
     runs-on: ${{ matrix.os }}
     timeout-minutes: 15
@@ -46,7 +46,7 @@ jobs:
 
   check_pre_commit_hooks:
     concurrency:
-      group: ${{ github.workflow }}-cpch-${{ github.ref }}
+      group: ${{ github.workflow }}-cpch-${{ github.head_ref || github.ref }}
       cancel-in-progress: true
     runs-on: ubuntu-latest
     strategy:
