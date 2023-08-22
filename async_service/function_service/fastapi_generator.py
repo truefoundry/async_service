@@ -10,6 +10,7 @@ from async_service import (
     WorkerConfig,
     InputConfig,
     OutputConfig,
+    Output
 )
 import json
 import uuid
@@ -19,9 +20,8 @@ INTERNAL_FUNCTION_NAME = "internal_func_name"
 
 
 async def send_request_to_queue(
-    request_id: str, input: BaseModel, output_config: OutputConfig
+    request_id: str, input: BaseModel, output_publisher: Output
 ):
-    output_publisher = output_config.to_output()
     
     my_dict = dict(input._iter(to_dict=False))
     my_dict[INTERNAL_FUNCTION_NAME] = input.__class__.__name__
@@ -33,10 +33,10 @@ async def send_request_to_queue(
     )
 
 
-def wrapper_func(func, name: str, output_config: OutputConfig):
+def wrapper_func(func, name: str, output_publisher: Output):
     async def wrapper(input: create_pydantic_model_from_function_signature(func, name)):
         request_id = str(uuid.uuid4())
-        await send_request_to_queue(request_id, input, output_config)
+        await send_request_to_queue(request_id, input, output_publisher)
         return request_id
 
     return wrapper
@@ -51,11 +51,11 @@ def create_async_server_for_functions(
         lambda : get_functions_dict_with_input_signatures(funct_dict),
         methods=["GET"],
     )
-
+    output_publisher = output_config.to_output()
     for name, func in funct_dict.items():
         app.add_api_route(
             f"/{name.lower()}",
-            wrapper_func(func, name, output_config),
+            wrapper_func(func, name, output_publisher),
             methods=["POST"],
         )
 
