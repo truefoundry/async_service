@@ -52,6 +52,7 @@ def create_pydantic_model_from_function_signature(func, model_name: str):
         __config__=config,
     )
 
+
 def get_functions_dict_with_input_signatures(functions_dict: Dict[str, Callable]):
     return {
         name: create_pydantic_model_from_function_signature(func, name).schema()
@@ -62,11 +63,10 @@ def get_functions_dict_with_input_signatures(functions_dict: Dict[str, Callable]
 async def send_request_to_queue(
     request_id: str, input: BaseModel, input_publisher: Input
 ):
-    
     my_dict = dict(input._iter(to_dict=False))
     my_dict[INTERNAL_FUNCTION_NAME] = input.__class__.__name__
     input_message = InputMessage(request_id=request_id, body=my_dict)
-    
+
     await input_publisher.publish_input_message(
         request_id=request_id,
         serialized_output_message=json.dumps(input_message.dict()).encode(),

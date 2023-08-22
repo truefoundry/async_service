@@ -109,7 +109,7 @@ class NATSInput(Input):
                     except Exception as ex:
                         raise InputFetchAckFailure() from ex
             break
-    
+
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
     ):
@@ -119,7 +119,6 @@ class NATSInput(Input):
             payload=serialized_output_message,
             timeout=5,
         )
-        
 
 
 class NATSOutput(Output):
@@ -150,17 +149,19 @@ class NATSOutput(Output):
             payload=serialized_output_message,
             timeout=5,
         )
-    
-    async def get_output_message(self, request_id: str, timeout: float = 0.5) -> Optional[bytes]:
+
+    async def get_output_message(
+        self, request_id: str, timeout: float = 0.5
+    ) -> Optional[bytes]:
         jetstream = await self._get_js_client()
-        sub = await jetstream.subscribe(
-            subject=f"{self._root_subject}.{request_id}"
-        )
+        sub = await jetstream.subscribe(subject=f"{self._root_subject}.{request_id}")
         try:
             msg = await sub.next_msg(timeout=timeout)
         except NatsTimeoutError:
-            raise OutputMessageTimeoutError(f'No message received for request_id: {request_id}')
-        response = OutputMessage(**json.loads(msg.data.decode()))    
+            raise OutputMessageTimeoutError(
+                f"No message received for request_id: {request_id}"
+            )
+        response = OutputMessage(**json.loads(msg.data.decode()))
         if ProcessStatus[response.status] is not ProcessStatus.SUCCESS:
             raise MessageProcessFailure(f"processing failed: {response.error}")
         return response

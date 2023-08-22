@@ -34,11 +34,14 @@ class InputMessageFetchFailure(Exception):
 class InputFetchAckFailure(Exception):
     ...
 
+
 class MessageProcessFailure(Exception):
     ...
 
+
 class OutputMessageTimeoutError(Exception):
     ...
+
 
 class Input(abc.ABC):
     @asynccontextmanager
@@ -47,7 +50,7 @@ class Input(abc.ABC):
         self,
     ) -> AsyncIterator[Optional[Union[str, bytes]]]:
         ...
-    
+
     @abc.abstractmethod
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str

@@ -61,7 +61,7 @@ class SQSInput(Input):
                     except Exception as ex:
                         raise InputFetchAckFailure() from ex
             break
-    
+
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
     ):
