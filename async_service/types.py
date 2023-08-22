@@ -35,11 +35,7 @@ class InputFetchAckFailure(Exception):
     ...
 
 
-class MessageProcessFailure(Exception):
-    ...
-
-
-class OutputMessageTimeoutError(Exception):
+class OutputMessageFetchTimeoutError(Exception):
     ...
 
 

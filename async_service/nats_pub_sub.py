@@ -13,13 +13,11 @@ from async_service.types import (
     Input,
     InputFetchAckFailure,
     InputMessageFetchFailure,
-    MessageProcessFailure,
     NATSInputConfig,
     NATSOutputConfig,
     Output,
     OutputMessage,
-    OutputMessageTimeoutError,
-    ProcessStatus,
+    OutputMessageFetchTimeoutError,
 )
 
 
@@ -154,16 +152,16 @@ class NATSOutput(Output):
         self, request_id: str, timeout: float = 0.5
     ) -> Optional[bytes]:
         jetstream = await self._get_js_client()
-        sub = await jetstream.subscribe(subject=f"{self._root_subject}.{request_id}")
+        sub = await jetstream.subscribe(
+            subject=f"{self._root_subject}.{request_id}", manual_ack=True
+        )
         try:
             msg = await sub.next_msg(timeout=timeout)
-        except NatsTimeoutError:
-            raise OutputMessageTimeoutError(
+        except NatsTimeoutError as ex:
+            raise OutputMessageFetchTimeoutError(
                 f"No message received for request_id: {request_id}"
-            )
+            ) from ex
         response = OutputMessage(**json.loads(msg.data.decode()))
-        if ProcessStatus[response.status] is not ProcessStatus.SUCCESS:
-            raise MessageProcessFailure(f"processing failed: {response.error}")
         return response
 
 

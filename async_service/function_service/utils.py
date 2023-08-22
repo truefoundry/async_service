@@ -70,7 +70,7 @@ async def send_request_to_queue(
 
     await input_publisher.publish_input_message(
         request_id=request_id,
-        serialized_output_message=json.dumps(input_message.dict()).encode(),
+        serialized_output_message=json.dumps(input_message.dict()).encode("utf-8"),
     )
 
 

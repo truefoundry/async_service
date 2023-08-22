@@ -1,5 +1,5 @@
 import os
-from typing import Callable, Dict
+from typing import Any, Callable, Dict
 
 from fastapi import FastAPI, HTTPException
 
@@ -11,8 +11,8 @@ from async_service.function_service.utils import (
 from async_service.processor import Processor
 from async_service.types import (
     InputMessage,
-    MessageProcessFailure,
-    OutputMessageTimeoutError,
+    OutputMessage,
+    OutputMessageFetchTimeoutError,
     WorkerConfig,
 )
 
@@ -119,6 +119,7 @@ class AsyncFunctionDeployment:
             FUNCTION_SCHEMA_ENDPOINT,
             lambda: get_functions_dict_with_input_signatures(self.functions),
             methods=["GET"],
+            response_model=Dict[str, Dict[str, Any]],
         )
 
         input_publisher = self.worker_config.input_config.to_input()
@@ -129,18 +130,14 @@ class AsyncFunctionDeployment:
             async def get_output(request_id: str):
                 try:
                     return await output_subscriber.get_output_message(request_id)
-                except OutputMessageTimeoutError as ex:
+                except OutputMessageFetchTimeoutError as ex:
                     raise HTTPException(status_code=404, detail=str(ex))
-                except MessageProcessFailure as ex:
-                    raise HTTPException(
-                        status_code=500,
-                        detail=f"Error processing the request: {str(ex)}",
-                    )
 
             app.add_api_route(
                 RESULT_ENDPOINT,
                 get_output,
                 methods=["GET"],
+                response_model=OutputMessage,
             )
 
         # check if all names are unique
@@ -155,5 +152,6 @@ class AsyncFunctionDeployment:
                 f"/{name.lower()}",
                 async_wrapper_func(func, name, input_publisher),
                 methods=["POST"],
+                response_model=str,
             )
         return app

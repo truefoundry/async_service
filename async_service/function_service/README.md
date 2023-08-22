@@ -69,3 +69,24 @@ uvicorn --host 0.0.0.0 --port 8001 main:wroker_app
 
 * Finally you can send request to your server_app at the deployed endpoint. (OpenAPI Docs are Auto-Generated)
 * You can fetch the results from server_app at `/result/{request_id}` if the Output Config Queue supports fetching results per request_id. It is NOT supported for SQS but supported for NATS
+
+To trigger the func_1 you can use the curl request
+```
+curl -X 'POST' \
+  'http://0.0.0.0:8000/func_1' \
+  -H 'accept: application/json' \
+  -H 'Content-Type: application/json' \
+  -d '{
+  "first_name": "string",
+  "last_name": "string"
+}'
+```
+
+This request returns a request_id.
+You can now send a request to check the result for this request_id [Only applicable if Output is NATS]
+
+```
+curl -X 'GET' \
+  'http://0.0.0.0:8000/result/<paste your request id here>' \
+  -H 'accept: application/json'
+```
