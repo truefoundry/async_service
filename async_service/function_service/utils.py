@@ -1,6 +1,13 @@
 import pydantic
 import inspect
 from typing import Any, Dict, Callable
+from pydantic import BaseModel
+from async_service import Input, InputMessage
+import json
+import uuid
+
+
+INTERNAL_FUNCTION_NAME = "internal_func_name"
 
 
 def create_pydantic_model_from_function_signature(func, model_name: str):
@@ -50,3 +57,26 @@ def get_functions_dict_with_input_signatures(functions_dict: Dict[str, Callable]
         name: create_pydantic_model_from_function_signature(func, name).schema()
         for name, func in functions_dict.items()
     }
+
+
+async def send_request_to_queue(
+    request_id: str, input: BaseModel, input_publisher: Input
+):
+    
+    my_dict = dict(input._iter(to_dict=False))
+    my_dict[INTERNAL_FUNCTION_NAME] = input.__class__.__name__
+    input_message = InputMessage(request_id=request_id, body=my_dict)
+    
+    await input_publisher.publish_input_message(
+        request_id=request_id,
+        serialized_output_message=json.dumps(input_message.dict()).encode(),
+    )
+
+
+def async_wrapper_func(func, name: str, output_publisher: Input):
+    async def wrapper(input: create_pydantic_model_from_function_signature(func, name)):
+        request_id = str(uuid.uuid4())
+        await send_request_to_queue(request_id, input, output_publisher)
+        return request_id
+
+    return wrapper

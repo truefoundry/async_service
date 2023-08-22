@@ -15,8 +15,7 @@ from async_service.types import (
     WorkerConfig,
 )
 from async_service.function_service import (
-    create_async_server_for_functions,
-    create_worker_for_functions
+    AsyncFunctionDeployment
 )
 
 __all__ = [
@@ -34,6 +33,5 @@ __all__ = [
     "OutputConfig",
     "Input",
     "Output",
-    "create_async_server_for_functions",
-    "create_worker_for_functions",
+    "AsyncFunctionDeployment"
 ]

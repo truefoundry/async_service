@@ -29,6 +29,12 @@ class DummyInput(Input):
             yield orjson.dumps(self._config.messages.pop(0).dict())
         else:
             yield None
+    
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        await asyncio.sleep(0.01)
+        self._config.messages.append((serialized_output_message, request_id))
 
 
 class DummyOutput(Output):

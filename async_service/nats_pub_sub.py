@@ -15,7 +15,12 @@ from async_service.types import (
     NATSInputConfig,
     NATSOutputConfig,
     Output,
+    OutputMessage,
+    ProcessStatus,
+    MessageProcessFailure,
+    OutputMessageTimeoutError,
 )
+import json
 
 
 def _get_work_queue_subject_pattern(root_subject: str):
@@ -104,6 +109,17 @@ class NATSInput(Input):
                     except Exception as ex:
                         raise InputFetchAckFailure() from ex
             break
+    
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        jetstream = await self._get_js_client()
+        await jetstream.publish(
+            subject=f"{self._root_subject}.{request_id}",
+            payload=serialized_output_message,
+            timeout=5,
+        )
+        
 
 
 class NATSOutput(Output):
@@ -112,7 +128,7 @@ class NATSOutput(Output):
         self._js = None
         self._root_subject = config.root_subject
 
-    async def _get_js_client(self):
+    async def _get_js_client(self) -> JetStreamContext:
         if self._js:
             return self._js
         self._js = (await connect(self._nats_url)).jetstream(timeout=10)
@@ -134,6 +150,20 @@ class NATSOutput(Output):
             payload=serialized_output_message,
             timeout=5,
         )
+    
+    async def get_output_message(self, request_id: str, timeout: float = 0.5) -> Optional[bytes]:
+        jetstream = await self._get_js_client()
+        sub = await jetstream.subscribe(
+            subject=f"{self._root_subject}.{request_id}"
+        )
+        try:
+            msg = await sub.next_msg(timeout=timeout)
+        except NatsTimeoutError:
+            raise OutputMessageTimeoutError(f'No message received for request_id: {request_id}')
+        response = OutputMessage(**json.loads(msg.data.decode()))    
+        if ProcessStatus[response.status] is not ProcessStatus.SUCCESS:
+            raise MessageProcessFailure(f"processing failed: {response.error}")
+        return response
 
 
 async def _initialize_stream(jetstream: JetStreamContext, stream_config: StreamConfig):
