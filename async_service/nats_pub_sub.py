@@ -1,3 +1,4 @@
+import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
@@ -12,15 +13,14 @@ from async_service.types import (
     Input,
     InputFetchAckFailure,
     InputMessageFetchFailure,
+    MessageProcessFailure,
     NATSInputConfig,
     NATSOutputConfig,
     Output,
     OutputMessage,
-    ProcessStatus,
-    MessageProcessFailure,
     OutputMessageTimeoutError,
+    ProcessStatus,
 )
-import json
 
 
 def _get_work_queue_subject_pattern(root_subject: str):

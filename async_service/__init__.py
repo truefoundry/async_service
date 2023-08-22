@@ -1,4 +1,5 @@
 from async_service.app import ProcessorApp
+from async_service.function_service import AsyncFunctionDeployment
 from async_service.processor import Processor
 from async_service.types import (
     Input,
@@ -14,7 +15,6 @@ from async_service.types import (
     SQSOutputConfig,
     WorkerConfig,
 )
-from async_service.function_service import AsyncFunctionDeployment
 
 __all__ = [
     "ProcessorApp",
