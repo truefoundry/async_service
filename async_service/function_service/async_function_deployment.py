@@ -3,13 +3,18 @@ from typing import Callable, Dict
 
 from fastapi import FastAPI, HTTPException
 
-from async_service import InputMessage, Processor, WorkerConfig
 from async_service.function_service.utils import (
     INTERNAL_FUNCTION_NAME,
     async_wrapper_func,
     get_functions_dict_with_input_signatures,
 )
-from async_service.types import MessageProcessFailure, OutputMessageTimeoutError
+from async_service.processor import Processor
+from async_service.types import (
+    InputMessage,
+    MessageProcessFailure,
+    OutputMessageTimeoutError,
+    WorkerConfig,
+)
 
 FUNCTION_SCHEMA_ENDPOINT = "/function-schemas"
 RESULT_ENDPOINT = "/result/{request_id}"
