@@ -150,7 +150,10 @@ class NATSOutput(Output):
 
     async def get_output_message(
         self, request_id: str, timeout: float = 0.5
-    ) -> Optional[bytes]:
+    ) -> OutputMessage:
+        if timeout > 2:
+            raise ValueError("Timeout must be less than 2 seconds")
+
         jetstream = await self._get_js_client()
         sub = await jetstream.subscribe(
             subject=f"{self._root_subject}.{request_id}", manual_ack=True
@@ -161,7 +164,7 @@ class NATSOutput(Output):
             raise OutputMessageFetchTimeoutError(
                 f"No message received for request_id: {request_id}"
             ) from ex
-        response = OutputMessage(**json.loads(msg.data.decode()))
+        response = OutputMessage(**json.loads(msg.data.decode("utf-8")))
         return response
 
 

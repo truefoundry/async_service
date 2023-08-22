@@ -68,7 +68,7 @@ class SQSInput(Input):
         await run_in_threadpool(
             self._sqs.send_message,
             QueueUrl=self._queue_url,
-            MessageBody=serialized_output_message.decode()
+            MessageBody=serialized_output_message.decode("utf-8")
             if isinstance(serialized_output_message, bytes)
             else serialized_output_message,
         )
