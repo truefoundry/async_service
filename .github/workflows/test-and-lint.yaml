@@ -1,0 +1,74 @@
+name: Test and lint
+
+on:
+  pull_request:
+    types: [ opened, synchronize, reopened ]
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  test:
+    concurrency:
+      group: ${{ github.workflow }}-t-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        os: [ ubuntu-latest ]
+        python-version: [ "3.8", "3.11" ]
+        include:
+          - os: macos-latest
+            python-version: 3.8
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v4
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry env use ${{ matrix.python-version }}
+          poetry install
+
+      - name: Test & Code coverage with pytest
+        run: |
+          poetry run pytest --durations=0 tests/
+
+  check_pre_commit_hooks:
+    concurrency:
+      group: ${{ github.workflow }}-cpch-${{ github.ref }}
+      cancel-in-progress: true
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.9"]
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install poetry
+        run: pipx install poetry
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v3
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'poetry'
+
+      - name: Install dependencies
+        run: |
+          poetry env use ${{ matrix.python-version }}
+          poetry install
+
+      - name: Check files with pre-commit
+        run: |
+          poetry run pre-commit run --all-files --show-diff-on-failure -v
