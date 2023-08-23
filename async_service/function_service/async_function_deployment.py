@@ -1,3 +1,4 @@
+import json
 import os
 from typing import Any, Callable, Dict
 
@@ -7,6 +8,7 @@ from async_service.function_service.utils import (
     INTERNAL_FUNCTION_NAME,
     async_wrapper_func,
     get_functions_dict_with_input_signatures,
+    validate_function_name,
 )
 from async_service.processor import Processor
 from async_service.types import (
@@ -20,7 +22,7 @@ FUNCTION_SCHEMA_ENDPOINT = "/function-schemas"
 RESULT_ENDPOINT = "/result/{request_id}"
 
 
-class AsyncFunctionDeployment:
+class FunctionAsyncExecutor:
     """
     A class for deploying and managing asynchronous functions with input and output configurations.
 
@@ -36,7 +38,7 @@ class AsyncFunctionDeployment:
     Usage Example:
         from async_service import (
             WorkerConfig,
-            AsyncFunctionDeployment,
+            FunctionAsyncExecutor,
             SQSInputConfig,
             SQSOutputConfig,
         )
@@ -46,7 +48,7 @@ class AsyncFunctionDeployment:
         functions = {"func_1": func1, "func_2": func2}
 
         # Configure the deployment
-        async_func_deployment = AsyncFunctionDeployment(
+        async_func_deployment = FunctionAsyncExecutor(
             functions=functions,
             worker_config=WorkerConfig(
                 input_config=SQSInputConfig(
@@ -80,6 +82,11 @@ class AsyncFunctionDeployment:
             raise ValueError(
                 f"Function names {INTERNAL_FUNCTION_NAME},  {FUNCTION_SCHEMA_ENDPOINT.lstrip('/')} and RESULT_ENDPOINT.split('/')[1] are reserved for internal use."
             )
+        for name in functions:
+            if not validate_function_name(name):
+                raise ValueError(
+                    f"Function name {name} is not valid. Function names length must be less than 30 and not contain . or /"
+                )
         self.functions = functions
         self.worker_config = worker_config
         self.init_function = init_function
@@ -125,20 +132,21 @@ class AsyncFunctionDeployment:
         input_publisher = self.worker_config.input_config.to_input()
         output_subscriber = self.worker_config.output_config.to_output()
 
-        if hasattr(output_subscriber, "get_output_message"):
+        async def get_output(request_id: str):
+            try:
+                data = await output_subscriber.get_output_message(request_id)
+                return OutputMessage(**json.loads(data.decode("utf-8")))
+            except OutputMessageFetchTimeoutError as ex:
+                raise HTTPException(status_code=404, detail=str(ex))
+            except NotImplementedError as ex:
+                raise HTTPException(status_code=501, detail=str(ex))
 
-            async def get_output(request_id: str):
-                try:
-                    return await output_subscriber.get_output_message(request_id)
-                except OutputMessageFetchTimeoutError as ex:
-                    raise HTTPException(status_code=404, detail=str(ex))
-
-            app.add_api_route(
-                RESULT_ENDPOINT,
-                get_output,
-                methods=["GET"],
-                response_model=OutputMessage,
-            )
+        app.add_api_route(
+            RESULT_ENDPOINT,
+            get_output,
+            methods=["GET"],
+            response_model=OutputMessage,
+        )
 
         # check if all names are unique
         func_names_list = [name.lower() for name in list(self.functions.keys())]

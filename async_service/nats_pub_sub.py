@@ -5,7 +5,13 @@ from typing import AsyncIterator, Optional
 from nats import connect
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
-from nats.js.api import ConsumerConfig, RetentionPolicy, StorageType, StreamConfig
+from nats.js.api import (
+    AckPolicy,
+    ConsumerConfig,
+    RetentionPolicy,
+    StorageType,
+    StreamConfig,
+)
 from nats.js.errors import BadRequestError
 
 from async_service.logger import logger
@@ -16,7 +22,6 @@ from async_service.types import (
     NATSInputConfig,
     NATSOutputConfig,
     Output,
-    OutputMessage,
     OutputMessageFetchTimeoutError,
 )
 
@@ -148,15 +153,14 @@ class NATSOutput(Output):
             timeout=5,
         )
 
-    async def get_output_message(
-        self, request_id: str, timeout: float = 0.5
-    ) -> OutputMessage:
+    async def get_output_message(self, request_id: str, timeout: float = 0.5) -> bytes:
         if timeout > 2:
             raise ValueError("Timeout must be less than 2 seconds")
 
         jetstream = await self._get_js_client()
         sub = await jetstream.subscribe(
-            subject=f"{self._root_subject}.{request_id}", manual_ack=True
+            subject=f"{self._root_subject}.{request_id}",
+            config=ConsumerConfig(ack_policy=AckPolicy.NONE),
         )
         try:
             msg = await sub.next_msg(timeout=timeout)
@@ -164,8 +168,7 @@ class NATSOutput(Output):
             raise OutputMessageFetchTimeoutError(
                 f"No message received for request_id: {request_id}"
             ) from ex
-        response = OutputMessage(**json.loads(msg.data.decode("utf-8")))
-        return response
+        return msg.data
 
 
 async def _initialize_stream(jetstream: JetStreamContext, stream_config: StreamConfig):

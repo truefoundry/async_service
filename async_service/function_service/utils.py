@@ -1,5 +1,6 @@
 import inspect
 import json
+import re
 import uuid
 from typing import Any, Callable, Dict
 
@@ -64,7 +65,7 @@ def get_functions_dict_with_input_signatures(functions_dict: Dict[str, Callable]
 async def send_request_to_queue(
     request_id: str, input: BaseModel, input_publisher: Input
 ):
-    my_dict = dict(input._iter(to_dict=False))
+    my_dict = input.dict()
     my_dict[INTERNAL_FUNCTION_NAME] = input.__class__.__name__
     input_message = InputMessage(request_id=request_id, body=my_dict)
 
@@ -81,3 +82,11 @@ def async_wrapper_func(func, name: str, output_publisher: Input):
         return request_id
 
     return wrapper
+
+
+def validate_function_name(input_string):
+    pattern = r"^[^./]{1,30}$"
+    if re.match(pattern, input_string):
+        return True
+    else:
+        return False

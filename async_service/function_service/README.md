@@ -2,7 +2,7 @@
 
 ## Install
 ```console
-pip install "async_service[sqs] @ git+https://github.com/truefoundry/async_service.git@main"
+pip install "async_service[nats] @ git+https://github.com/truefoundry/async_service.git@main"
 ```
 
 ## Quick start
@@ -30,9 +30,9 @@ def func2(
 ```python
 from async_service import (
     WorkerConfig,
-    AsyncFunctionDeployment,
-    SQSInputConfig,
-    SQSOutputConfig,
+    FunctionAsyncExecutor,
+    NATSInputConfig,
+    NATSOutputConfig,
 )
 from sample_functions import func1, func2
 
@@ -40,15 +40,19 @@ from sample_functions import func1, func2
 functions = {"func_1": func1, "func_2": func2}
 
 # Configure the deployment
-async_func_deployment = AsyncFunctionDeployment(
+async_func_deployment = FunctionAsyncExecutor(
     functions=functions,
     worker_config=WorkerConfig(
-        input_config=SQSInputConfig(
-            queue_url="<Paste Input SQS Queue URL Here>", visibility_timeout=10
+        input_config=NATSInputConfig(
+            nats_url="<paste nats url here>",
+            root_subject="<paste root subject for work queue>",
+            consumer_name="<name of consumer>",
+            visibility_timeout=2,
         ),
-        output_config=SQSOutputConfig(
-            queue_url="<Paste Output SQS URL Here>",
-        ),
+        output_config = NATSOutputConfig(
+            nats_url="<paste nats url here>",
+            root_subject="paste subject root for result queue",
+        )
     ),
 )
 
@@ -74,7 +78,6 @@ To trigger the func_1 you can use the curl request
 ```
 curl -X 'POST' \
   'http://0.0.0.0:8000/func_1' \
-  -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
   "first_name": "string",
@@ -86,7 +89,5 @@ This request returns a request_id.
 You can now send a request to check the result for this request_id [Only applicable if Output is NATS]
 
 ```
-curl -X 'GET' \
-  'http://0.0.0.0:8000/result/<paste your request id here>' \
-  -H 'accept: application/json'
+curl 'http://0.0.0.0:8000/result/<paste your request id here>'
 ```

@@ -94,3 +94,6 @@ class SQSOutput(Output):
             if isinstance(serialized_output_message, bytes)
             else serialized_output_message,
         )
+
+    async def get_output_message(request_id: str) -> bytes:
+        raise NotImplementedError

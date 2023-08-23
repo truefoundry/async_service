@@ -1,5 +1,5 @@
 from async_service.function_service.async_function_deployment import (
-    AsyncFunctionDeployment,
+    FunctionAsyncExecutor,
 )
 
-__all__ = ["AsyncFunctionDeployment"]
+__all__ = ["FunctionAsyncExecutor"]

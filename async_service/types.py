@@ -108,6 +108,10 @@ class Output(abc.ABC):
     ):
         ...
 
+    @abc.abstractmethod
+    async def get_output_message(self, request_id: str) -> Optional[OutputMessage]:
+        ...
+
 
 class OutputConfig(abc.ABC, BaseModel):
     class Config:
