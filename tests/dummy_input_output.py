@@ -47,6 +47,9 @@ class DummyOutput(Output):
         await asyncio.sleep(0.01)
         self._config.results.append((serialized_output_message, request_id))
 
+    async def get_output_message(self, request_id: str) -> bytes:
+        raise NotImplementedError
+
 
 class DummyOutputConfig(OutputConfig):
     results: List[Tuple[bytes, str]]
