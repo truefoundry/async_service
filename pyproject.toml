@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "async-service"
-version = "0.1.0"
+version = "0.1.2"
 description = ""
 authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
 readme = "README.md"
