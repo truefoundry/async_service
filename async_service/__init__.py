@@ -1,6 +1,7 @@
 from async_service.app import ProcessorApp
 from async_service.processor import Processor
 from async_service.types import (
+    AWSAccessKeyAuth,
     Input,
     InputConfig,
     InputMessage,
@@ -30,4 +31,5 @@ __all__ = [
     "OutputConfig",
     "Input",
     "Output",
+    "AWSAccessKeyAuth",
 ]
