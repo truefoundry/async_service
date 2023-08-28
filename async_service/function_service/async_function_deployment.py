@@ -89,7 +89,7 @@ class FunctionAsyncExecutor:
                 raise ValueError(
                     f"Function name {name} is not valid. Function names length must be less than 30 and not contain . or /"
                 )
-            self.functions[name] = function
+            self.functions[name] = functions[name]
         self.worker_config = worker_config
         self.init_function = init_function
 
