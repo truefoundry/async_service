@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict
 import pydantic
 from pydantic import BaseModel
 
-from async_service.types import Input, InputMessage
+from async_service.types import AsyncOutputResponse, Input, InputMessage
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
 
@@ -79,13 +79,13 @@ def async_wrapper_func(func, name: str, output_publisher: Input):
     async def wrapper(input: create_pydantic_model_from_function_signature(func, name)):
         request_id = str(uuid.uuid4())
         await send_request_to_queue(request_id, input, output_publisher)
-        return request_id
+        return AsyncOutputResponse(request_id=request_id)
 
     return wrapper
 
 
 def validate_function_name(input_string):
-    pattern = r"^[^./]{1,30}$"
+    pattern = r"^[^./\s]{1,30}$"
     if re.match(pattern, input_string):
         return True
     else:

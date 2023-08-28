@@ -12,6 +12,7 @@ from async_service.function_service.utils import (
 )
 from async_service.processor import Processor
 from async_service.types import (
+    AsyncOutputResponse,
     InputMessage,
     OutputMessage,
     OutputMessageFetchTimeoutError,
@@ -74,6 +75,7 @@ class FunctionAsyncExecutor:
         functions: Dict[str, Callable],
         init_function: Callable = None,
     ) -> None:
+        self.functions = {}
         if (
             INTERNAL_FUNCTION_NAME in functions
             or FUNCTION_SCHEMA_ENDPOINT.lstrip("/") in functions
@@ -87,12 +89,9 @@ class FunctionAsyncExecutor:
                 raise ValueError(
                     f"Function name {name} is not valid. Function names length must be less than 30 and not contain . or /"
                 )
-        self.functions = functions
+            self.functions[name] = function
         self.worker_config = worker_config
         self.init_function = init_function
-
-    def register_function(self, name: str, function: Callable) -> None:
-        self.functions[name] = function
 
     def build_worker_app(self) -> FastAPI:
         app = FastAPI(root_path=os.getenv("TFY_SERVICE_ROOT_PATH"), docs_url="/")
@@ -160,6 +159,6 @@ class FunctionAsyncExecutor:
                 f"/{name.lower()}",
                 async_wrapper_func(func, name, input_publisher),
                 methods=["POST"],
-                response_model=str,
+                response_model=AsyncOutputResponse,
             )
         return app

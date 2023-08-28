@@ -25,6 +25,8 @@ def func2(
     return a + b
 ```
 
+Note: Currently only the following types are supported as arguments - `int`, `str`, `float`, `list`, `dict`, `None`. In the future we plan to decouple the serialization/deserialization from queue publish/subscribe to support arbitrary types
+
 ### Create the FastAPI applications
 ### `main.py`
 ```python
@@ -85,7 +87,7 @@ curl -X 'POST' \
 }'
 ```
 
-This request returns a request_id.
+This request returns in a format: `{"request_id" : "<some req id>}`.
 You can now send a request to check the result for this request_id [Only applicable if Output is NATS]
 
 ```

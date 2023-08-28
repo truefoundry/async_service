@@ -162,3 +162,10 @@ class WorkerConfig(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class AsyncOutputResponse(BaseModel):
+    request_id: str
+
+    class Config:
+        allow_extra = True
