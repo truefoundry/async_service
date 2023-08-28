@@ -6,13 +6,13 @@ from fastapi import FastAPI, HTTPException
 
 from async_service.function_service.utils import (
     INTERNAL_FUNCTION_NAME,
+    AsyncOutputResponse,
     async_wrapper_func,
     get_functions_dict_with_input_signatures,
     validate_function_name,
 )
 from async_service.processor import Processor
 from async_service.types import (
-    AsyncOutputResponse,
     InputMessage,
     OutputMessage,
     OutputMessageFetchTimeoutError,
@@ -131,9 +131,13 @@ class FunctionAsyncExecutor:
         input_publisher = self.worker_config.input_config.to_input()
         output_subscriber = self.worker_config.output_config.to_output()
 
-        async def get_output(request_id: str):
+        async def get_output(request_id: str, timeout: float = 2):
+            if timeout > 10:
+                raise HTTPException(
+                    status_code=400, detail="Timeout must be less than 2 seconds"
+                )
             try:
-                data = await output_subscriber.get_output_message(request_id)
+                data = await output_subscriber.get_output_message(request_id, timeout)
                 return OutputMessage(**json.loads(data.decode("utf-8")))
             except OutputMessageFetchTimeoutError as ex:
                 raise HTTPException(status_code=404, detail=str(ex))

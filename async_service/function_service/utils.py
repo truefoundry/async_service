@@ -7,9 +7,16 @@ from typing import Any, Callable, Dict
 import pydantic
 from pydantic import BaseModel
 
-from async_service.types import AsyncOutputResponse, Input, InputMessage
+from async_service.types import Input, InputMessage
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
+
+
+class AsyncOutputResponse(BaseModel):
+    request_id: str
+
+    class Config:
+        allow_extra = True
 
 
 def create_pydantic_model_from_function_signature(func, model_name: str):

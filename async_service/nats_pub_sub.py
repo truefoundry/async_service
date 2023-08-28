@@ -153,10 +153,7 @@ class NATSOutput(Output):
             timeout=5,
         )
 
-    async def get_output_message(self, request_id: str, timeout: float = 0.5) -> bytes:
-        if timeout > 2:
-            raise ValueError("Timeout must be less than 2 seconds")
-
+    async def get_output_message(self, request_id: str, timeout: float = 1.0) -> bytes:
         jetstream = await self._get_js_client()
         sub = await jetstream.subscribe(
             subject=f"{self._root_subject}.{request_id}",
