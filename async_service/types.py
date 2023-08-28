@@ -35,12 +35,22 @@ class InputFetchAckFailure(Exception):
     ...
 
 
+class OutputMessageFetchTimeoutError(Exception):
+    ...
+
+
 class Input(abc.ABC):
     @asynccontextmanager
     @abc.abstractmethod
     async def get_input_message(
         self,
     ) -> AsyncIterator[Optional[Union[str, bytes]]]:
+        ...
+
+    @abc.abstractmethod
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
         ...
 
 
@@ -98,6 +108,10 @@ class Output(abc.ABC):
     ):
         ...
 
+    @abc.abstractmethod
+    async def get_output_message(self, request_id: str) -> Optional[OutputMessage]:
+        ...
+
 
 class OutputConfig(abc.ABC, BaseModel):
     class Config:
@@ -148,3 +162,10 @@ class WorkerConfig(BaseModel):
 
     class Config:
         arbitrary_types_allowed = True
+
+
+class AsyncOutputResponse(BaseModel):
+    request_id: str
+
+    class Config:
+        allow_extra = True

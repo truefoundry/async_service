@@ -30,6 +30,12 @@ class DummyInput(Input):
         else:
             yield None
 
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        await asyncio.sleep(0.01)
+        self._config.messages.append((serialized_output_message, request_id))
+
 
 class DummyOutput(Output):
     def __init__(self, config: DummyOutputConfig):
@@ -40,6 +46,9 @@ class DummyOutput(Output):
     ):
         await asyncio.sleep(0.01)
         self._config.results.append((serialized_output_message, request_id))
+
+    async def get_output_message(self, request_id: str) -> bytes:
+        raise NotImplementedError
 
 
 class DummyOutputConfig(OutputConfig):

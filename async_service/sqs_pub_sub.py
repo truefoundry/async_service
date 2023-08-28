@@ -62,6 +62,17 @@ class SQSInput(Input):
                         raise InputFetchAckFailure() from ex
             break
 
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        await run_in_threadpool(
+            self._sqs.send_message,
+            QueueUrl=self._queue_url,
+            MessageBody=serialized_output_message.decode("utf-8")
+            if isinstance(serialized_output_message, bytes)
+            else serialized_output_message,
+        )
+
 
 class SQSOutput(Output):
     def __init__(self, config: SQSOutputConfig):
@@ -83,3 +94,6 @@ class SQSOutput(Output):
             if isinstance(serialized_output_message, bytes)
             else serialized_output_message,
         )
+
+    async def get_output_message(request_id: str) -> bytes:
+        raise NotImplementedError

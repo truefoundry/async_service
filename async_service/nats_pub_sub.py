@@ -1,10 +1,17 @@
+import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 from nats import connect
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
-from nats.js.api import ConsumerConfig, RetentionPolicy, StorageType, StreamConfig
+from nats.js.api import (
+    AckPolicy,
+    ConsumerConfig,
+    RetentionPolicy,
+    StorageType,
+    StreamConfig,
+)
 from nats.js.errors import BadRequestError
 
 from async_service.logger import logger
@@ -15,6 +22,7 @@ from async_service.types import (
     NATSInputConfig,
     NATSOutputConfig,
     Output,
+    OutputMessageFetchTimeoutError,
 )
 
 
@@ -105,6 +113,16 @@ class NATSInput(Input):
                         raise InputFetchAckFailure() from ex
             break
 
+    async def publish_input_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        jetstream = await self._get_js_client()
+        await jetstream.publish(
+            subject=f"{self._root_subject}.{request_id}",
+            payload=serialized_output_message,
+            timeout=5,
+        )
+
 
 class NATSOutput(Output):
     def __init__(self, config: NATSOutputConfig):
@@ -112,7 +130,7 @@ class NATSOutput(Output):
         self._js = None
         self._root_subject = config.root_subject
 
-    async def _get_js_client(self):
+    async def _get_js_client(self) -> JetStreamContext:
         if self._js:
             return self._js
         self._js = (await connect(self._nats_url)).jetstream(timeout=10)
@@ -134,6 +152,20 @@ class NATSOutput(Output):
             payload=serialized_output_message,
             timeout=5,
         )
+
+    async def get_output_message(self, request_id: str, timeout: float = 1.0) -> bytes:
+        jetstream = await self._get_js_client()
+        sub = await jetstream.subscribe(
+            subject=f"{self._root_subject}.{request_id}",
+            config=ConsumerConfig(ack_policy=AckPolicy.NONE),
+        )
+        try:
+            msg = await sub.next_msg(timeout=timeout)
+        except NatsTimeoutError as ex:
+            raise OutputMessageFetchTimeoutError(
+                f"No message received for request_id: {request_id}"
+            ) from ex
+        return msg.data
 
 
 async def _initialize_stream(jetstream: JetStreamContext, stream_config: StreamConfig):
