@@ -87,7 +87,7 @@ curl -X 'POST' \
 }'
 ```
 
-This request returns in a format: `{"request_id" : "<some req id>}`.
+This request returns in a format: `{"request_id" : "<some req id>"}`.
 You can now send a request to check the result for this request_id [Only applicable if Output is NATS]
 
 ```
