@@ -2,7 +2,7 @@
 
 ## Install
 ```console
-pip install "async_processor[sqs] @ git+https://github.com/truefoundry/async_processor.git@main"
+pip install "async_processor[sqs]"
 ```
 
 ## Quick start
