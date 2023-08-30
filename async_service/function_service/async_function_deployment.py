@@ -193,6 +193,6 @@ class FunctionAsyncExecutor:
                 f"/{name.lower()}",
                 sync_wrapper_func(func, name, input_publisher, output_subscriber),
                 methods=["POST"],
-                response_model=AsyncOutputResponse,
+                response_model=OutputMessage,
             )
         return app
