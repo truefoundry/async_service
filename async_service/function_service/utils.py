@@ -5,9 +5,16 @@ import uuid
 from typing import Any, Callable, Dict
 
 import pydantic
+from fastapi import HTTPException
 from pydantic import BaseModel
 
-from async_service.types import Input, InputMessage
+from async_service.types import (
+    Input,
+    InputMessage,
+    Output,
+    OutputMessage,
+    OutputMessageFetchTimeoutError,
+)
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
 
@@ -87,6 +94,23 @@ def async_wrapper_func(func, name: str, output_publisher: Input):
         request_id = str(uuid.uuid4())
         await send_request_to_queue(request_id, input, output_publisher)
         return AsyncOutputResponse(request_id=request_id)
+
+    return wrapper
+
+
+def sync_wrapper_func(
+    func, name: str, input_publisher: Input, output_subscriber: Output
+):
+    async def wrapper(input: create_pydantic_model_from_function_signature(func, name)):
+        request_id = str(uuid.uuid4())
+        await send_request_to_queue(request_id, input, input_publisher)
+        try:
+            data = await output_subscriber.get_output_message(request_id, 60)
+            return OutputMessage(**json.loads(data.decode("utf-8")))
+        except OutputMessageFetchTimeoutError as ex:
+            raise HTTPException(status_code=404, detail=str(ex))
+        except NotImplementedError as ex:
+            raise HTTPException(status_code=501, detail=str(ex))
 
     return wrapper
 

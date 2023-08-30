@@ -9,6 +9,7 @@ from async_service.function_service.utils import (
     AsyncOutputResponse,
     async_wrapper_func,
     get_functions_dict_with_input_signatures,
+    sync_wrapper_func,
     validate_function_name,
 )
 from async_service.processor import Processor
@@ -162,6 +163,35 @@ class FunctionAsyncExecutor:
             app.add_api_route(
                 f"/{name.lower()}",
                 async_wrapper_func(func, name, input_publisher),
+                methods=["POST"],
+                response_model=AsyncOutputResponse,
+            )
+        return app
+
+    def build_sync_server_app(self) -> FastAPI:
+        app = FastAPI(root_path=os.getenv("TFY_SERVICE_ROOT_PATH"), docs_url="/")
+
+        app.add_api_route(
+            FUNCTION_SCHEMA_ENDPOINT,
+            lambda: get_functions_dict_with_input_signatures(self.functions),
+            methods=["GET"],
+            response_model=Dict[str, Dict[str, Any]],
+        )
+
+        input_publisher = self.worker_config.input_config.to_input()
+        output_subscriber = self.worker_config.output_config.to_output()
+
+        # check if all names are unique
+        func_names_list = [name.lower() for name in list(self.functions.keys())]
+        if len(func_names_list) != len(set(func_names_list)):
+            raise ValueError(
+                "Keys of functions dictionary (converted to lower case) must be unique."
+            )
+
+        for name, func in self.functions.items():
+            app.add_api_route(
+                f"/{name.lower()}",
+                sync_wrapper_func(func, name, input_publisher, output_subscriber),
                 methods=["POST"],
                 response_model=AsyncOutputResponse,
             )
