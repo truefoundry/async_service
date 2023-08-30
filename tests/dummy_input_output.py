@@ -5,8 +5,7 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, List, Optional, Tuple
 
 import orjson
-
-from async_service import Input, InputConfig, InputMessage, Output, OutputConfig
+from async_processor import Input, InputConfig, InputMessage, Output, OutputConfig
 
 
 class DummyInputConfig(InputConfig):

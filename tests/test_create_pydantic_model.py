@@ -1,11 +1,10 @@
 from typing import Dict, List
 
-from pydantic import BaseModel, Field
-from typing_extensions import Annotated
-
-from async_service.function_service.utils import (
+from async_processor.function_service.utils import (
     create_pydantic_model_from_function_signature,
 )
+from pydantic import BaseModel, Field
+from typing_extensions import Annotated
 
 # def dummy_function(a: Annotated[int, ], b: str, c: bool = True, d: List[str] = []) -> None:
 #    pass

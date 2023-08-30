@@ -1,4 +1,4 @@
-from async_service.function_service.async_function_deployment import (
+from async_processor.function_service.async_function_deployment import (
     FunctionAsyncExecutor,
 )
 

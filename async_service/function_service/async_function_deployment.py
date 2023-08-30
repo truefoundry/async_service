@@ -2,22 +2,21 @@ import json
 import os
 from typing import Any, Callable, Dict
 
-from fastapi import FastAPI, HTTPException
-
-from async_service.function_service.utils import (
+from async_processor.function_service.utils import (
     INTERNAL_FUNCTION_NAME,
     AsyncOutputResponse,
     async_wrapper_func,
     get_functions_dict_with_input_signatures,
     validate_function_name,
 )
-from async_service.processor import Processor
-from async_service.types import (
+from async_processor.processor import Processor
+from async_processor.types import (
     InputMessage,
     OutputMessage,
     OutputMessageFetchTimeoutError,
     WorkerConfig,
 )
+from fastapi import FastAPI, HTTPException
 
 FUNCTION_SCHEMA_ENDPOINT = "/function-schemas"
 RESULT_ENDPOINT = "/result/{request_id}"
@@ -37,7 +36,7 @@ class FunctionAsyncExecutor:
         build_worker_app: Build and return an asynchronous worker application for executing functions.
 
     Usage Example:
-        from async_service import (
+        from async_processor import (
             WorkerConfig,
             FunctionAsyncExecutor,
             SQSInputConfig,

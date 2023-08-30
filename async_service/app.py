@@ -7,16 +7,20 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Optional
 
 import orjson
+from async_processor.logger import logger
+from async_processor.types import (
+    InputMessage,
+    OutputMessage,
+    ProcessStatus,
+    WorkerConfig,
+)
+from async_processor.worker import Worker
 from fastapi import FastAPI, HTTPException
 from fastapi.responses import Response
 from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
-from async_service.logger import logger
-from async_service.types import InputMessage, OutputMessage, ProcessStatus, WorkerConfig
-from async_service.worker import Worker
-
 if TYPE_CHECKING:
-    from async_service.processor import Processor
+    from async_processor.processor import Processor
 
 
 def _json_serializer(obj: Any) -> bytes:

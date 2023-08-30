@@ -1,10 +1,10 @@
 [tool.poetry]
-name = "tfy-async-service"
+name = "async-processor"
 version = "0.0.0"
 description = ""
 authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
 readme = "README.md"
-packages = [{include = "async_service"}]
+packages = [{include = "async_processor"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.12"
