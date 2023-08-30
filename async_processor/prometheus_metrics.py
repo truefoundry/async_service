@@ -3,49 +3,49 @@ from contextlib import contextmanager
 
 from prometheus_client import Counter, Gauge
 
-from async_service.logger import logger
-from async_service.types import (
+from async_processor.logger import logger
+from async_processor.types import (
     InputFetchAckFailure,
     InputMessageFetchFailure,
     ProcessStatus,
 )
 
 _MESSAGES_IN_PROCESS = Gauge(
-    "tfy_async_service_messages_in_process",
+    "tfy_async_processor_messages_in_process",
     "Number of messages currently being processed by the worker",
     multiprocess_mode="livesum",
 )
 
 _MESSAGES_PROCESSED = Counter(
-    "tfy_async_service_messages_processed",
+    "tfy_async_processor_messages_processed",
     "Number of messages processed by the worker",
     ["status"],
 )
 
 _MESSAGE_PROCESSING_TIME_MS = Gauge(
-    "tfy_async_service_processing_time_ms",
+    "tfy_async_processor_processing_time_ms",
     "Time taken to process a single message in milliseconds",
     multiprocess_mode="livemax",
 )
 
 _OUTPUT_MESSAGE_PUBLISH_TIME_MS = Gauge(
-    "tfy_async_service_output_message_publish_time_ms",
+    "tfy_async_processor_output_message_publish_time_ms",
     "Time taken to publish output message in milliseconds",
     multiprocess_mode="livemax",
 )
 
 _OUTPUT_MESSAGE_PUBLISH_FAILURES = Counter(
-    "tfy_async_service_output_message_publish_failures",
+    "tfy_async_processor_output_message_publish_failures",
     "Number of times output message publish has failed",
 )
 
 _INPUT_MESSAGE_FETCH_FAILURES = Counter(
-    "tfy_async_service_input_message_fetch_failures",
+    "tfy_async_processor_input_message_fetch_failures",
     "Number of times input message fetching has failed",
 )
 
 _INPUT_MESSAGE_FETCH_ACK_FAILURES = Counter(
-    "tfy_async_service_input_message_fetch_ack_failures",
+    "tfy_async_processor_input_message_fetch_ack_failures",
     "Number of times input message acking has failed",
 )
 

@@ -3,8 +3,8 @@ import uuid
 
 import orjson
 
-from async_service import InputMessage, OutputMessage, Processor, WorkerConfig
-from async_service.worker import Worker
+from async_processor import InputMessage, OutputMessage, Processor, WorkerConfig
+from async_processor.worker import Worker
 from tests.dummy_input_output import DummyInputConfig, DummyOutputConfig
 
 

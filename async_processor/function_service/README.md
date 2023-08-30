@@ -2,7 +2,7 @@
 
 ## Install
 ```console
-pip install "async_service[nats] @ git+https://github.com/truefoundry/async_service.git@main"
+pip install "async_processor[nats] @ git+https://github.com/truefoundry/async_processor.git@main"
 ```
 
 ## Quick start
@@ -30,7 +30,7 @@ Note: Currently only the following types are supported as arguments - `int`, `st
 ### Create the FastAPI applications
 ### `main.py`
 ```python
-from async_service import (
+from async_processor import (
     WorkerConfig,
     FunctionAsyncExecutor,
     NATSInputConfig,

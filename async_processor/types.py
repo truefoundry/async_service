@@ -81,7 +81,7 @@ class SQSInputConfig(InputConfig):
     wait_time_seconds: conint(ge=1, le=20) = 19
 
     def to_input(self) -> Input:
-        from async_service.sqs_pub_sub import SQSInput
+        from async_processor.sqs_pub_sub import SQSInput
 
         return SQSInput(self)
 
@@ -96,7 +96,7 @@ class NATSInputConfig(InputConfig):
     wait_time_seconds: confloat(ge=1) = 5
 
     def to_input(self) -> Input:
-        from async_service.nats_pub_sub import NATSInput
+        from async_processor.nats_pub_sub import NATSInput
 
         return NATSInput(self)
 
@@ -131,7 +131,7 @@ class SQSOutputConfig(OutputConfig):
     auth: Optional[AWSAccessKeyAuth] = None
 
     def to_output(self) -> Output:
-        from async_service.sqs_pub_sub import SQSOutput
+        from async_processor.sqs_pub_sub import SQSOutput
 
         return SQSOutput(self)
 
@@ -143,7 +143,7 @@ class NATSOutputConfig(OutputConfig):
     root_subject: str
 
     def to_output(self) -> Output:
-        from async_service.nats_pub_sub import NATSOutput
+        from async_processor.nats_pub_sub import NATSOutput
 
         return NATSOutput(self)
 

@@ -5,16 +5,21 @@ from typing import TYPE_CHECKING, Optional, Union
 
 from starlette.concurrency import run_in_threadpool
 
-from async_service.logger import logger
-from async_service.prometheus_metrics import (
+from async_processor.logger import logger
+from async_processor.prometheus_metrics import (
     collect_input_message_fetch_metrics,
     collect_output_message_publish_metrics,
     collect_total_message_processing_metrics,
 )
-from async_service.types import InputMessage, OutputMessage, ProcessStatus, WorkerConfig
+from async_processor.types import (
+    InputMessage,
+    OutputMessage,
+    ProcessStatus,
+    WorkerConfig,
+)
 
 if TYPE_CHECKING:
-    from async_service.processor import Processor
+    from async_processor.processor import Processor
 
 
 class Worker:

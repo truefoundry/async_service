@@ -14,8 +14,8 @@ from nats.js.api import (
 )
 from nats.js.errors import BadRequestError
 
-from async_service.logger import logger
-from async_service.types import (
+from async_processor.logger import logger
+from async_processor.types import (
     Input,
     InputFetchAckFailure,
     InputMessageFetchFailure,

@@ -2,7 +2,7 @@
 
 ## Install
 ```console
-pip install "async_service[sqs] @ git+https://github.com/truefoundry/async_service.git@main"
+pip install "async_processor[sqs] @ git+https://github.com/truefoundry/async_processor.git@main"
 ```
 
 ## Quick start
@@ -10,7 +10,7 @@ pip install "async_service[sqs] @ git+https://github.com/truefoundry/async_servi
 ### Write the Processor
 #### `app.py`
 ```python
-from async_service import (
+from async_processor import (
     InputMessage,
     Processor,
     WorkerConfig,
@@ -77,7 +77,7 @@ Output:
 import json
 import uuid
 
-from async_service import InputMessage, OutputMessage, ProcessStatus
+from async_processor import InputMessage, OutputMessage, ProcessStatus
 import boto3
 
 

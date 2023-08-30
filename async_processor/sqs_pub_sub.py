@@ -4,8 +4,8 @@ from typing import AsyncIterator, Optional
 import boto3
 from starlette.concurrency import run_in_threadpool
 
-from async_service.logger import logger
-from async_service.types import (
+from async_processor.logger import logger
+from async_processor.types import (
     Input,
     InputFetchAckFailure,
     InputMessageFetchFailure,
