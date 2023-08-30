@@ -3,6 +3,8 @@ from __future__ import annotations
 import signal
 from typing import TYPE_CHECKING, Optional, Union
 
+from starlette.concurrency import run_in_threadpool
+
 from async_processor.logger import logger
 from async_processor.prometheus_metrics import (
     collect_input_message_fetch_metrics,
@@ -15,7 +17,6 @@ from async_processor.types import (
     ProcessStatus,
     WorkerConfig,
 )
-from starlette.concurrency import run_in_threadpool
 
 if TYPE_CHECKING:
     from async_processor.processor import Processor

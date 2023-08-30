@@ -7,6 +7,10 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Optional
 
 import orjson
+from fastapi import FastAPI, HTTPException
+from fastapi.responses import Response
+from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
+
 from async_processor.logger import logger
 from async_processor.types import (
     InputMessage,
@@ -15,9 +19,6 @@ from async_processor.types import (
     WorkerConfig,
 )
 from async_processor.worker import Worker
-from fastapi import FastAPI, HTTPException
-from fastapi.responses import Response
-from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
 if TYPE_CHECKING:
     from async_processor.processor import Processor

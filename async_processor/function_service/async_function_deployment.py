@@ -2,6 +2,8 @@ import json
 import os
 from typing import Any, Callable, Dict
 
+from fastapi import FastAPI, HTTPException
+
 from async_processor.function_service.utils import (
     INTERNAL_FUNCTION_NAME,
     AsyncOutputResponse,
@@ -16,7 +18,6 @@ from async_processor.types import (
     OutputMessageFetchTimeoutError,
     WorkerConfig,
 )
-from fastapi import FastAPI, HTTPException
 
 FUNCTION_SCHEMA_ENDPOINT = "/function-schemas"
 RESULT_ENDPOINT = "/result/{request_id}"

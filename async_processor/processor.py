@@ -2,9 +2,10 @@ import abc
 from typing import Any, Optional, Union
 
 import orjson
+from fastapi import FastAPI
+
 from async_processor.app import ProcessorApp
 from async_processor.types import InputMessage, OutputMessage, WorkerConfig
-from fastapi import FastAPI
 
 
 class Processor(abc.ABC):

@@ -5,8 +5,9 @@ import uuid
 from typing import Any, Callable, Dict
 
 import pydantic
-from async_processor.types import Input, InputMessage
 from pydantic import BaseModel
+
+from async_processor.types import Input, InputMessage
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
 

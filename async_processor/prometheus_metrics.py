@@ -1,13 +1,14 @@
 import time
 from contextlib import contextmanager
 
+from prometheus_client import Counter, Gauge
+
 from async_processor.logger import logger
 from async_processor.types import (
     InputFetchAckFailure,
     InputMessageFetchFailure,
     ProcessStatus,
 )
-from prometheus_client import Counter, Gauge
 
 _MESSAGES_IN_PROCESS = Gauge(
     "tfy_async_processor_messages_in_process",

@@ -2,16 +2,6 @@ import json
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
-from async_processor.logger import logger
-from async_processor.types import (
-    Input,
-    InputFetchAckFailure,
-    InputMessageFetchFailure,
-    NATSInputConfig,
-    NATSOutputConfig,
-    Output,
-    OutputMessageFetchTimeoutError,
-)
 from nats import connect
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
@@ -23,6 +13,17 @@ from nats.js.api import (
     StreamConfig,
 )
 from nats.js.errors import BadRequestError
+
+from async_processor.logger import logger
+from async_processor.types import (
+    Input,
+    InputFetchAckFailure,
+    InputMessageFetchFailure,
+    NATSInputConfig,
+    NATSOutputConfig,
+    Output,
+    OutputMessageFetchTimeoutError,
+)
 
 
 def _get_work_queue_subject_pattern(root_subject: str):

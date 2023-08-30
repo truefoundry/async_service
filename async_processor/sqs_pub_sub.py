@@ -2,6 +2,8 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 import boto3
+from starlette.concurrency import run_in_threadpool
+
 from async_processor.logger import logger
 from async_processor.types import (
     Input,
@@ -11,7 +13,6 @@ from async_processor.types import (
     SQSInputConfig,
     SQSOutputConfig,
 )
-from starlette.concurrency import run_in_threadpool
 
 
 class SQSInput(Input):
