@@ -1,6 +1,6 @@
 [tool.poetry]
-name = "async-service"
-version = "0.1.2"
+name = "tfy-async-service"
+version = "0.0.0"
 description = ""
 authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
 readme = "README.md"
