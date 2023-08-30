@@ -2,9 +2,9 @@ import asyncio
 import uuid
 
 import orjson
+
 from async_processor import InputMessage, OutputMessage, Processor, WorkerConfig
 from async_processor.worker import Worker
-
 from tests.dummy_input_output import DummyInputConfig, DummyOutputConfig
 
 
