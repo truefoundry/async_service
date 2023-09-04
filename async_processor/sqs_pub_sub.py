@@ -95,5 +95,5 @@ class SQSOutput(Output):
             else serialized_output_message,
         )
 
-    async def get_output_message(request_id: str) -> bytes:
+    async def get_output_message(self, request_id: str) -> bytes:
         raise NotImplementedError
