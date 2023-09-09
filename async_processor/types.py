@@ -90,9 +90,8 @@ class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
     nats_url: Union[str, List[str]]
-    root_subject: str
-    consumer_name: constr(regex=r"^[a-z0-9\-]{1,32}$")
-    visibility_timeout: confloat(ge=1)
+    root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
+    consumer_name: constr(regex=r"^[a-zA-Z0-9\-_]{1,32}$")
     wait_time_seconds: confloat(ge=1) = 5
 
     def to_input(self) -> Input:
@@ -140,7 +139,7 @@ class NATSOutputConfig(OutputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
     nats_url: Union[str, List[str]]
-    root_subject: str
+    root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
 
     def to_output(self) -> Output:
         from async_processor.nats_pub_sub import NATSOutput
