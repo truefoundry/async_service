@@ -2,7 +2,7 @@
 
 ## Install
 ```console
-pip install "async_processor[nats] @ git+https://github.com/truefoundry/async_processor.git@main"
+pip install "async_processor[nats]"
 ```
 
 ## Quick start
@@ -49,7 +49,6 @@ async_func_deployment = FunctionAsyncExecutor(
             nats_url="<paste nats url here>",
             root_subject="<paste root subject for work queue>",
             consumer_name="<name of consumer>",
-            visibility_timeout=2,
         ),
         output_config = NATSOutputConfig(
             nats_url="<paste nats url here>",
@@ -68,7 +67,7 @@ worker_app = async_func_deployment.build_worker_app()
 ### Run the applications locally ot deploy them
 ```
 uvicorn --host 0.0.0.0 --port 8000 main:server_app
-uvicorn --host 0.0.0.0 --port 8001 main:wroker_app
+uvicorn --host 0.0.0.0 --port 8001 main:worker_app
 ```
 
 ### Send Request to the server_app

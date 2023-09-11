@@ -58,7 +58,6 @@ class NATSInput(Input):
     def __init__(self, config: NATSInputConfig):
         self._nats_url = config.nats_url
         self._root_subject = config.root_subject
-        self._ack_wait = config.visibility_timeout
         self._consumer_name = config.consumer_name
         self._wait_time_seconds = config.wait_time_seconds
         self._js = None
@@ -84,7 +83,6 @@ class NATSInput(Input):
             subject=_get_work_queue_subject_pattern(self._root_subject),
             durable=self._consumer_name,
             config=ConsumerConfig(
-                ack_wait=self._ack_wait,
                 durable_name=self._consumer_name,
             ),
         )
