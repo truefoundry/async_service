@@ -19,6 +19,7 @@ pydantic = ">=1.10.12,<1.11.0"
 nats-py = { version = ">=2.3.1,<2.4.0", optional = true }
 aiohttp = { version = ">=3.8.5,<3.9.0", optional = true }
 boto3 =  { version = ">=1.28.16,<1.29.0", optional = true }
+kafka-python = "^2.0.2"
 
 [tool.poetry.extras]
 nats = ["nats-py", "aiohttp"]

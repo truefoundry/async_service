@@ -69,6 +69,11 @@ class AWSAccessKeyAuth(BaseModel):
     aws_session_token: Optional[str] = None
 
 
+class SASLAuth(BaseModel):
+    username: str
+    password: str
+
+
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
 
@@ -98,6 +103,19 @@ class NATSInputConfig(InputConfig):
         from async_processor.nats_pub_sub import NATSInput
 
         return NATSInput(self)
+
+
+class KafkaInputConfig(InputConfig):
+    type: constr(regex=r"^kafka$") = "kafka"
+
+    bootstrap_servers: str
+    topic_name: str
+    auth: SASLAuth
+
+    def to_input(self) -> Input:
+        from async_processor.kafka_pub_sub import KafkaInput
+
+        return KafkaInput(self)
 
 
 class Output(abc.ABC):
@@ -145,6 +163,19 @@ class NATSOutputConfig(OutputConfig):
         from async_processor.nats_pub_sub import NATSOutput
 
         return NATSOutput(self)
+
+
+class KafkaOutputConfig(OutputConfig):
+    type: constr(regex=r"^kafka$") = "kafka"
+
+    bootstrap_servers: str
+    topic_name: str
+    auth: SASLAuth
+
+    def to_output(self) -> Output:
+        from async_processor.kafka_pub_sub import KafkaOutput
+
+        return KafkaOutput(self)
 
 
 class WorkerConfig(BaseModel):
