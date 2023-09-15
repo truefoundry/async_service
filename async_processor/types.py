@@ -110,6 +110,7 @@ class KafkaInputConfig(InputConfig):
 
     bootstrap_servers: str
     topic_name: str
+    consumer_group_id: str
     auth: SASLAuth
 
     def to_input(self) -> Input:

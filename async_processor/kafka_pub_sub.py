@@ -7,6 +7,7 @@ from starlette.concurrency import run_in_threadpool
 from async_processor.logger import logger
 from async_processor.types import (
     Input,
+    InputFetchAckFailure,
     InputMessageFetchFailure,
     KafkaInputConfig,
     KafkaOutputConfig,
@@ -19,13 +20,16 @@ class KafkaInput(Input):
         self._bootstrap_servers = config.bootstrap_servers
         self._topic_name = config.topic_name
         self._auth = config.auth
+        self._consumer_group_id = config.consumer_group_id
         self._consumer = KafkaConsumer(
             self._topic_name,
             bootstrap_servers=self._bootstrap_servers,
+            group_id=config.consumer_group_id,
             sasl_plain_username=config.auth.username,
             sasl_plain_password=config.auth.password,
             security_protocol="SASL_SSL",
             sasl_mechanism="PLAIN",
+            enable_auto_commit=False,
         )
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
@@ -54,7 +58,13 @@ class KafkaInput(Input):
                     logger.debug("No messages in queue")
                     continue
                 for msg in msgs:
-                    yield msg.value
+                    try:
+                        yield msg.value
+                    finally:
+                        try:
+                            await run_in_threadpool(self._consumer.commit)
+                        except Exception as ex:
+                            raise InputFetchAckFailure() from ex
             break
 
     async def publish_input_message(
