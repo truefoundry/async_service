@@ -73,6 +73,7 @@ class ProcessorApp:
         logger.info("Invoking the processor init method")
         self._processor.init()
         logger.info("Processor init method execution completed")
+        worker_task = None
         if self._worker_config:
             logger.info("Starting processor runner")
             loop = asyncio.get_running_loop()
@@ -80,7 +81,7 @@ class ProcessorApp:
                 worker_config=self._worker_config,
                 processor=self._processor,
             )
-            loop.create_task(self._worker.run())
+            worker_task = loop.create_task(self._worker.run())
             logger.info("Started processor runner")
         else:
             logger.warning(
@@ -88,6 +89,10 @@ class ProcessorApp:
                 "Only `/process` API will be available."
             )
         yield
+        logger.info("Shutting down worker")
+        if self._worker:
+            self._worker.stop()
+            await worker_task
 
         if os.getenv("PROMETHEUS_MULTIPROC_DIR"):
             multiprocess.mark_process_dead(os.getpid())

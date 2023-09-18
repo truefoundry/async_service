@@ -30,37 +30,34 @@ class SQSInput(Input):
     async def get_input_message(
         self,
     ) -> AsyncIterator[Optional[str]]:
-        while True:
+        try:
+            # Move this to its own thread and queue model later
+            response = await run_in_threadpool(
+                self._sqs.receive_message,
+                QueueUrl=self._queue_url,
+                AttributeNames=["All"],
+                MaxNumberOfMessages=1,
+                MessageAttributeNames=["All"],
+                WaitTimeSeconds=self._wait_time_seconds,
+                VisibilityTimeout=self._visibility_timeout,
+            )
+        except Exception as ex:
+            raise InputMessageFetchFailure() from ex
+        messages = response.get("Messages", [])
+        for msg in messages:
+            receipt_handle = msg["ReceiptHandle"]
             try:
-                # Move this to its own thread and queue model later
-                response = await run_in_threadpool(
-                    self._sqs.receive_message,
-                    QueueUrl=self._queue_url,
-                    AttributeNames=["All"],
-                    MaxNumberOfMessages=1,
-                    MessageAttributeNames=["All"],
-                    WaitTimeSeconds=self._wait_time_seconds,
-                    VisibilityTimeout=self._visibility_timeout,
-                )
-            except Exception as ex:
-                raise InputMessageFetchFailure() from ex
-            if "Messages" not in response:
-                logger.debug("No message in queue")
-                continue
-            for msg in response["Messages"]:
-                receipt_handle = msg["ReceiptHandle"]
+                yield msg["Body"]
+            finally:
                 try:
-                    yield msg["Body"]
-                finally:
-                    try:
-                        await run_in_threadpool(
-                            self._sqs.delete_message,
-                            QueueUrl=self._queue_url,
-                            ReceiptHandle=receipt_handle,
-                        )
-                    except Exception as ex:
-                        raise InputFetchAckFailure() from ex
-            break
+                    await run_in_threadpool(
+                        self._sqs.delete_message,
+                        QueueUrl=self._queue_url,
+                        ReceiptHandle=receipt_handle,
+                    )
+                except Exception as ex:
+                    raise InputFetchAckFailure() from ex
+        yield None
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str

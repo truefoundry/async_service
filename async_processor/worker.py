@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import signal
 from typing import TYPE_CHECKING, Optional, Union
 
 from starlette.concurrency import run_in_threadpool
@@ -29,13 +28,11 @@ class Worker:
         self._output = worker_config.output_config.to_output()
         self._processor = processor
         self._healthy = True
-        signal.signal(signal.SIGTERM, self.stop)
-        signal.signal(signal.SIGINT, self.stop)
 
     def stop(self, *args, **kwargs):
-        if logger:
-            logger.info("Stopping worker")
         self._run = False
+        if logger:
+            logger.info("Stopped worker")
 
     @property
     def healthy(self) -> bool:
@@ -97,9 +94,7 @@ class Worker:
             # if hasattr(self._output, "initialize_stream"):
             #     await self._output.initialize_stream()
             logger.info("Polling messages")
-            while True:
-                if not self._run:
-                    break
+            while self._run:
                 try:
                     with collect_input_message_fetch_metrics():
                         async with self._input.get_input_message() as serialized_input_message:

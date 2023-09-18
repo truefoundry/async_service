@@ -24,11 +24,11 @@ class DummyInput(Input):
     async def get_input_message(
         self,
     ) -> AsyncIterator[Optional[bytes]]:
-        await asyncio.sleep(0.01)
         if len(self._config.messages) > 0:
             yield orjson.dumps(self._config.messages.pop(0).dict())
         else:
             yield None
+        await asyncio.sleep(0)
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
@@ -44,8 +44,8 @@ class DummyOutput(Output):
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: str
     ):
-        await asyncio.sleep(0.01)
         self._config.results.append((serialized_output_message, request_id))
+        await asyncio.sleep(0)
 
     async def get_output_message(self, request_id: str) -> bytes:
         raise NotImplementedError
