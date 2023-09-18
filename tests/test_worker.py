@@ -28,7 +28,7 @@ async def _test_processor_runner():
         ),
     )
     task = asyncio.create_task(runner.run())
-    await asyncio.sleep(0.5)
+    await asyncio.sleep(0.1)
     runner.stop()
     await asyncio.wait_for(task, timeout=1.0)
 

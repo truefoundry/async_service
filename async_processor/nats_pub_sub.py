@@ -93,23 +93,22 @@ class NATSInput(Input):
         self,
     ) -> AsyncIterator[Optional[bytes]]:
         psub = await self._get_psub()
-        while True:
+        msgs = []
+        try:
+            msgs = await psub.fetch(1, timeout=self._wait_time_seconds)
+        except NatsTimeoutError:
+            logger.debug("No message in queue")
+        except Exception as ex:
+            raise InputMessageFetchFailure() from ex
+        for msg in msgs:
             try:
-                msgs = await psub.fetch(1, timeout=self._wait_time_seconds)
-            except NatsTimeoutError:
-                logger.debug("No message in queue")
-                continue
-            except Exception as ex:
-                raise InputMessageFetchFailure() from ex
-            for msg in msgs:
+                yield msg.data
+            finally:
                 try:
-                    yield msg.data
-                finally:
-                    try:
-                        await msg.ack()
-                    except Exception as ex:
-                        raise InputFetchAckFailure() from ex
-            break
+                    await msg.ack()
+                except Exception as ex:
+                    raise InputFetchAckFailure() from ex
+        yield None
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
