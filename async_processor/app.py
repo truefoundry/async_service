@@ -90,9 +90,13 @@ class ProcessorApp:
             )
         yield
         logger.info("Shutting down worker")
-        if self._worker:
-            self._worker.stop()
-            await worker_task
+
+        try:
+            if self._worker:
+                self._worker.stop()
+                await worker_task
+        except Exception:
+            logger.exception("Exception raised while stopping the worker.")
 
         if os.getenv("PROMETHEUS_MULTIPROC_DIR"):
             multiprocess.mark_process_dead(os.getpid())
