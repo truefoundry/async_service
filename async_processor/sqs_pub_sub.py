@@ -44,6 +44,9 @@ class SQSInput(Input):
         except Exception as ex:
             raise InputMessageFetchFailure() from ex
         messages = response.get("Messages", [])
+        if len(messages) == 0:
+            yield None
+            return
         for msg in messages:
             receipt_handle = msg["ReceiptHandle"]
             try:
@@ -57,7 +60,6 @@ class SQSInput(Input):
                     )
                 except Exception as ex:
                     raise InputFetchAckFailure() from ex
-        yield None
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
