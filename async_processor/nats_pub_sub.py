@@ -100,6 +100,11 @@ class NATSInput(Input):
             logger.debug("No message in queue")
         except Exception as ex:
             raise InputMessageFetchFailure() from ex
+
+        if len(msgs) == 0:
+            yield None
+            return
+
         for msg in msgs:
             try:
                 yield msg.data
@@ -108,7 +113,6 @@ class NATSInput(Input):
                     await msg.ack()
                 except Exception as ex:
                     raise InputFetchAckFailure() from ex
-        yield None
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
