@@ -69,7 +69,7 @@ class AWSAccessKeyAuth(BaseModel):
     aws_session_token: Optional[str] = None
 
 
-class SASLAuth(BaseModel):
+class KafkaSASLAuth(BaseModel):
     username: str
     password: str
 
@@ -111,7 +111,8 @@ class KafkaInputConfig(InputConfig):
     bootstrap_servers: str
     topic_name: str
     consumer_group_id: str
-    auth: SASLAuth
+    auth: KafkaSASLAuth
+    wait_time_seconds: confloat(ge=1) = 5
 
     def to_input(self) -> Input:
         from async_processor.kafka_pub_sub import KafkaInput
@@ -171,7 +172,7 @@ class KafkaOutputConfig(OutputConfig):
 
     bootstrap_servers: str
     topic_name: str
-    auth: SASLAuth
+    auth: KafkaSASLAuth
 
     def to_output(self) -> Output:
         from async_processor.kafka_pub_sub import KafkaOutput

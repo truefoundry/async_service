@@ -21,6 +21,7 @@ class KafkaInput(Input):
         self._topic_name = config.topic_name
         self._auth = config.auth
         self._consumer_group_id = config.consumer_group_id
+        self.wait_time_seconds = config.wait_time_seconds
         self._consumer = KafkaConsumer(
             self._topic_name,
             bootstrap_servers=self._bootstrap_servers,
@@ -43,29 +44,26 @@ class KafkaInput(Input):
     async def get_input_message(
         self,
     ) -> AsyncIterator[Optional[str]]:
-        while True:
-            try:
-                res = await run_in_threadpool(
-                    self._consumer.poll, timeout_ms=1000, max_records=1
-                )
-            except Exception as ex:
-                raise InputMessageFetchFailure() from ex
-            if len(res.keys()) == 0:
-                logger.debug("No messages in queue")
-                continue
+        try:
+            res = await run_in_threadpool(
+                self._consumer.poll,
+                timeout_ms=self.wait_time_seconds * 1000,
+                max_records=1,
+            )
+        except Exception as ex:
+            raise InputMessageFetchFailure() from ex
+        if len(res.keys()) > 0:
             for _, msgs in res.items():
-                if len(msgs) == 0:
-                    logger.debug("No messages in queue")
-                    continue
-                for msg in msgs:
-                    try:
-                        yield msg.value
-                    finally:
+                if len(msgs) > 0:
+                    for msg in msgs:
                         try:
-                            await run_in_threadpool(self._consumer.commit)
-                        except Exception as ex:
-                            raise InputFetchAckFailure() from ex
-            break
+                            yield msg.value
+                        finally:
+                            try:
+                                await run_in_threadpool(self._consumer.commit)
+                            except Exception as ex:
+                                raise InputFetchAckFailure() from ex
+        yield None
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
