@@ -26,18 +26,30 @@ class KafkaInput(Input):
             self._topic_name,
             bootstrap_servers=self._bootstrap_servers,
             group_id=config.consumer_group_id,
-            sasl_plain_username=config.auth.username,
-            sasl_plain_password=config.auth.password,
-            security_protocol="SASL_SSL",
-            sasl_mechanism="PLAIN",
             enable_auto_commit=False,
+            **(
+                {
+                    "sasl_plain_username": config.auth.username,
+                    "sasl_plain_password": config.auth.password,
+                    "security_protocol": "SASL_SSL",
+                    "sasl_mechanism": "PLAIN",
+                }
+                if config.auth
+                else {}
+            ),
         )
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            sasl_plain_username=config.auth.username,
-            sasl_plain_password=config.auth.password,
-            security_protocol="SASL_SSL",
-            sasl_mechanism="PLAIN",
+            **(
+                {
+                    "sasl_plain_username": config.auth.username,
+                    "sasl_plain_password": config.auth.password,
+                    "security_protocol": "SASL_SSL",
+                    "sasl_mechanism": "PLAIN",
+                }
+                if config.auth
+                else {}
+            ),
         )
 
     @asynccontextmanager
@@ -45,25 +57,27 @@ class KafkaInput(Input):
         self,
     ) -> AsyncIterator[Optional[str]]:
         try:
-            res = await run_in_threadpool(
+            consumer_map = await run_in_threadpool(
                 self._consumer.poll,
                 timeout_ms=self.wait_time_seconds * 1000,
                 max_records=1,
             )
         except Exception as ex:
             raise InputMessageFetchFailure() from ex
-        if len(res.keys()) > 0:
-            for _, msgs in res.items():
-                if len(msgs) > 0:
-                    for msg in msgs:
-                        try:
-                            yield msg.value
-                        finally:
-                            try:
-                                await run_in_threadpool(self._consumer.commit)
-                            except Exception as ex:
-                                raise InputFetchAckFailure() from ex
-        yield None
+
+        if len(consumer_map) == 0:
+            yield None
+            return
+
+        for _, msgs in consumer_map.items():
+            for msg in msgs:
+                try:
+                    yield msg.value
+                finally:
+                    try:
+                        await run_in_threadpool(self._consumer.commit)
+                    except Exception as ex:
+                        raise InputFetchAckFailure() from ex
 
     async def publish_input_message(
         self, serialized_output_message: bytes, request_id: str
@@ -79,10 +93,16 @@ class KafkaOutput(Output):
         self._topic_name = config.topic_name
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            sasl_plain_username=config.auth.username,
-            sasl_plain_password=config.auth.password,
-            security_protocol="SASL_SSL",
-            sasl_mechanism="PLAIN",
+            **(
+                {
+                    "sasl_plain_username": config.auth.username,
+                    "sasl_plain_password": config.auth.password,
+                    "security_protocol": "SASL_SSL",
+                    "sasl_mechanism": "PLAIN",
+                }
+                if config.auth
+                else {}
+            ),
         )
 
     async def publish_output_message(

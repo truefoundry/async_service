@@ -108,10 +108,10 @@ class NATSInputConfig(InputConfig):
 class KafkaInputConfig(InputConfig):
     type: constr(regex=r"^kafka$") = "kafka"
 
-    bootstrap_servers: str
+    bootstrap_servers: Union[str, List[str]]
     topic_name: str
     consumer_group_id: str
-    auth: KafkaSASLAuth
+    auth: Optional[KafkaSASLAuth] = None
     wait_time_seconds: confloat(ge=1) = 5
 
     def to_input(self) -> Input:
@@ -170,9 +170,9 @@ class NATSOutputConfig(OutputConfig):
 class KafkaOutputConfig(OutputConfig):
     type: constr(regex=r"^kafka$") = "kafka"
 
-    bootstrap_servers: str
+    bootstrap_servers: Union[str, List[str]]
     topic_name: str
-    auth: KafkaSASLAuth
+    auth: Optional[KafkaSASLAuth] = None
 
     def to_output(self) -> Output:
         from async_processor.kafka_pub_sub import KafkaOutput
