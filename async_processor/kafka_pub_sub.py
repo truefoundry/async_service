@@ -17,17 +17,19 @@ from async_processor.types import (
 
 class KafkaInput(Input):
     def __init__(self, config: KafkaInputConfig):
-        self._bootstrap_servers = config.bootstrap_servers
+        # comma separated list of bootstrap servers
+        self._bootstrap_servers = config.bootstrap_servers.split(",")
         self._topic_name = config.topic_name
         self._auth = config.auth
-        self._consumer_group_id = config.consumer_group_id
+        self._consumer_group_id = config.consumer_group
         self.wait_time_seconds = config.wait_time_seconds
         self._consumer = KafkaConsumer(
             self._topic_name,
             bootstrap_servers=self._bootstrap_servers,
-            group_id=config.consumer_group_id,
+            group_id=config.consumer_group,
             enable_auto_commit=False,
-            **(
+            ssl_check_hostname=config.tls
+            ** (
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
@@ -40,7 +42,8 @@ class KafkaInput(Input):
         )
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            **(
+            ssl_check_hostname=config.tls
+            ** (
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
@@ -57,7 +60,7 @@ class KafkaInput(Input):
         self,
     ) -> AsyncIterator[Optional[str]]:
         try:
-            consumer_map = await run_in_threadpool(
+            topic_to_records_map = await run_in_threadpool(
                 self._consumer.poll,
                 timeout_ms=self.wait_time_seconds * 1000,
                 max_records=1,
@@ -65,11 +68,11 @@ class KafkaInput(Input):
         except Exception as ex:
             raise InputMessageFetchFailure() from ex
 
-        if len(consumer_map) == 0:
+        if len(topic_to_records_map) == 0:
             yield None
             return
 
-        for _, msgs in consumer_map.items():
+        for _, msgs in topic_to_records_map.items():
             for msg in msgs:
                 try:
                     yield msg.value
@@ -89,11 +92,13 @@ class KafkaInput(Input):
 
 class KafkaOutput(Output):
     def __init__(self, config: KafkaOutputConfig):
-        self._bootstrap_servers = config.bootstrap_servers
+        # comma separated list of bootstrap servers
+        self._bootstrap_servers = config.bootstrap_servers.split(",")
         self._topic_name = config.topic_name
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            **(
+            ssl_check_hostname=config.tls
+            ** (
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,

@@ -108,9 +108,10 @@ class NATSInputConfig(InputConfig):
 class KafkaInputConfig(InputConfig):
     type: constr(regex=r"^kafka$") = "kafka"
 
-    bootstrap_servers: Union[str, List[str]]
+    bootstrap_servers: str
     topic_name: str
-    consumer_group_id: str
+    consumer_group: str
+    tls: bool = True
     auth: Optional[KafkaSASLAuth] = None
     wait_time_seconds: confloat(ge=1) = 5
 
@@ -170,8 +171,9 @@ class NATSOutputConfig(OutputConfig):
 class KafkaOutputConfig(OutputConfig):
     type: constr(regex=r"^kafka$") = "kafka"
 
-    bootstrap_servers: Union[str, List[str]]
+    bootstrap_servers: str
     topic_name: str
+    tls: bool = True
     auth: Optional[KafkaSASLAuth] = None
 
     def to_output(self) -> Output:
@@ -184,11 +186,13 @@ class WorkerConfig(BaseModel):
     input_config: Union[
         SQSInputConfig,
         NATSInputConfig,
+        KafkaInputConfig,
         InputConfig,
     ]
     output_config: Union[
         SQSOutputConfig,
         NATSOutputConfig,
+        KafkaOutputConfig,
         OutputConfig,
     ]
 
