@@ -189,12 +189,14 @@ class WorkerConfig(BaseModel):
         KafkaInputConfig,
         InputConfig,
     ]
-    output_config: Union[
-        SQSOutputConfig,
-        NATSOutputConfig,
-        KafkaOutputConfig,
-        OutputConfig,
-    ]
+    output_config: Optional[
+        Union[
+            SQSOutputConfig,
+            NATSOutputConfig,
+            KafkaOutputConfig,
+            OutputConfig,
+        ]
+    ] = None
 
     class Config:
         arbitrary_types_allowed = True

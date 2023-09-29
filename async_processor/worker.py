@@ -25,7 +25,11 @@ class Worker:
     def __init__(self, worker_config: WorkerConfig, processor: Processor):
         self._run = True
         self._input = worker_config.input_config.to_input()
-        self._output = worker_config.output_config.to_output()
+        self._output = (
+            worker_config.output_config.to_output()
+            if worker_config.output_config
+            else None
+        )
         self._processor = processor
         self._healthy = True
 
@@ -41,11 +45,14 @@ class Worker:
     async def _publish_response(
         self, serialized_output_message: bytes, request_id: str
     ):
-        with collect_output_message_publish_metrics():
-            await self._output.publish_output_message(
-                serialized_output_message=serialized_output_message,
-                request_id=request_id,
-            )
+        if self._output:
+            with collect_output_message_publish_metrics():
+                await self._output.publish_output_message(
+                    serialized_output_message=serialized_output_message,
+                    request_id=request_id,
+                )
+        else:
+            logger.debug("Skipping publishing response as output config is not present")
 
     async def _handle_msg(
         self,
