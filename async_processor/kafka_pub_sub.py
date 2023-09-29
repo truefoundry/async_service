@@ -27,7 +27,7 @@ class KafkaInput(Input):
             bootstrap_servers=self._bootstrap_servers,
             group_id=config.consumer_group,
             enable_auto_commit=False,
-            ssl_check_hostname=config.tls,
+            ssl_check_hostname=True,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
@@ -96,8 +96,8 @@ class KafkaOutput(Output):
         self._topic_name = config.topic_name
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            ssl_check_hostname=config.tls
-            ** (
+            ssl_check_hostname=config.tls,
+            **(
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
