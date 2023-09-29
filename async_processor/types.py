@@ -69,6 +69,11 @@ class AWSAccessKeyAuth(BaseModel):
     aws_session_token: Optional[str] = None
 
 
+class KafkaSASLAuth(BaseModel):
+    username: str
+    password: str
+
+
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
 
@@ -98,6 +103,22 @@ class NATSInputConfig(InputConfig):
         from async_processor.nats_pub_sub import NATSInput
 
         return NATSInput(self)
+
+
+class KafkaInputConfig(InputConfig):
+    type: constr(regex=r"^kafka$") = "kafka"
+
+    bootstrap_servers: str
+    topic_name: str
+    consumer_group: str
+    tls: bool = True
+    auth: Optional[KafkaSASLAuth] = None
+    wait_time_seconds: confloat(ge=1) = 5
+
+    def to_input(self) -> Input:
+        from async_processor.kafka_pub_sub import KafkaInput
+
+        return KafkaInput(self)
 
 
 class Output(abc.ABC):
@@ -147,15 +168,31 @@ class NATSOutputConfig(OutputConfig):
         return NATSOutput(self)
 
 
+class KafkaOutputConfig(OutputConfig):
+    type: constr(regex=r"^kafka$") = "kafka"
+
+    bootstrap_servers: str
+    topic_name: str
+    tls: bool = True
+    auth: Optional[KafkaSASLAuth] = None
+
+    def to_output(self) -> Output:
+        from async_processor.kafka_pub_sub import KafkaOutput
+
+        return KafkaOutput(self)
+
+
 class WorkerConfig(BaseModel):
     input_config: Union[
         SQSInputConfig,
         NATSInputConfig,
+        KafkaInputConfig,
         InputConfig,
     ]
     output_config: Union[
         SQSOutputConfig,
         NATSOutputConfig,
+        KafkaOutputConfig,
         OutputConfig,
     ]
 

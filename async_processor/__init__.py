@@ -6,6 +6,9 @@ from async_processor.types import (
     Input,
     InputConfig,
     InputMessage,
+    KafkaInputConfig,
+    KafkaOutputConfig,
+    KafkaSASLAuth,
     NATSInputConfig,
     NATSOutputConfig,
     Output,
@@ -34,4 +37,7 @@ __all__ = [
     "Output",
     "FunctionAsyncExecutor",
     "AWSAccessKeyAuth",
+    "KafkaInputConfig",
+    "KafkaOutputConfig",
+    "KafkaSASLAuth",
 ]
