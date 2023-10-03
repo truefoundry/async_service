@@ -69,6 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use ${{ matrix.python-version }}
+          poetry lock --check
           poetry install
 
       - name: Check files with pre-commit
