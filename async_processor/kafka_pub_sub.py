@@ -97,6 +97,7 @@ class KafkaOutput(Output):
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
             ssl_check_hostname=config.tls,
+            batch_size=0,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
@@ -112,9 +113,10 @@ class KafkaOutput(Output):
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: str
     ):
-        await run_in_threadpool(
-            self._producer.send, topic=self._topic_name, value=serialized_output_message
+        future = self._producer.send(
+            topic=self._topic_name, value=serialized_output_message
         )
+        await run_in_threadpool(future.get)
 
     async def get_output_message(self, request_id: str) -> bytes:
         raise NotImplementedError

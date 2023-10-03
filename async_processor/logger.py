@@ -1,6 +1,6 @@
 import logging
 
-logger = logging.getLogger("app")
+logger = logging.getLogger("async_processor")
 logger.setLevel(logging.INFO)
 handler = logging.StreamHandler()
 handler.setLevel(logging.INFO)

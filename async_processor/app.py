@@ -5,6 +5,7 @@ import os
 import time
 from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Optional
+from warnings import warn
 
 import orjson
 from fastapi import FastAPI, HTTPException
@@ -34,7 +35,8 @@ def _make_multiprocess_metrics_app():
     return make_asgi_app(registry=registry)
 
 
-_WORKER_CONFIG_ENV_VAR_NAME = "TFY_WORKER_CONFIG"
+_WORKER_CONFIG_ENV_VAR_NAME_OLD = "TFY_WORKER_CONFIG"  # We will deprecate this.
+_WORKER_CONFIG_ENV_VAR_NAME = "TFY_ASYNC_PROCESSOR_WORKER_CONFIG"
 
 
 class ProcessorApp:
@@ -47,10 +49,29 @@ class ProcessorApp:
         self._processor = processor
         self._worker_config = worker_config
 
-        if self._worker_config is None and _WORKER_CONFIG_ENV_VAR_NAME in os.environ:
-            self._worker_config = WorkerConfig(
-                **orjson.loads(os.environ[_WORKER_CONFIG_ENV_VAR_NAME])
-            )
+        if self._worker_config is None:
+            for env_var_name in (
+                _WORKER_CONFIG_ENV_VAR_NAME,
+                _WORKER_CONFIG_ENV_VAR_NAME_OLD,
+            ):
+                worker_config_json = os.getenv(env_var_name)
+
+                if (
+                    worker_config_json
+                    and env_var_name == _WORKER_CONFIG_ENV_VAR_NAME_OLD
+                ):
+                    warn(
+                        f"{_WORKER_CONFIG_ENV_VAR_NAME_OLD!r} env var "
+                        f"is deprecated. Use {_WORKER_CONFIG_ENV_VAR_NAME!r}",
+                        DeprecationWarning,
+                        stacklevel=2,
+                    )
+
+                if worker_config_json:
+                    self._worker_config = WorkerConfig(
+                        **orjson.loads(worker_config_json)
+                    )
+                    break
 
         self._app = FastAPI(
             lifespan=self._lifespan,
