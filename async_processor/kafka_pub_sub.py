@@ -28,6 +28,7 @@ class KafkaInput(Input):
             group_id=config.consumer_group,
             enable_auto_commit=False,
             ssl_check_hostname=config.tls,
+            api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
@@ -42,6 +43,7 @@ class KafkaInput(Input):
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
             ssl_check_hostname=config.tls,
+            api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
@@ -98,6 +100,7 @@ class KafkaOutput(Output):
             bootstrap_servers=self._bootstrap_servers,
             ssl_check_hostname=config.tls,
             batch_size=0,
+            api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
