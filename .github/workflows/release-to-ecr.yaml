@@ -1,8 +1,8 @@
 name: Push image to to ECR
 
 on:
-  # pull_request:
-  #   types: [ opened, synchronize, reopened ]
+  pull_request:
+    types: [ opened, synchronize, reopened ]
   push:
     branches:
       - 'main'
@@ -18,8 +18,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.DEVTEST_ECR_ACCESS_KEY }}
-          aws-secret-access-key: ${{ secrets.DEVTEST_ECR_SECRET_KEY }}
+          role-to-assume: ${{ secrets.PUBLIC_ECR_IAM_ROLE_ARN }}
           aws-region: us-east-1
 
       - name: Login to Amazon ECR
@@ -35,10 +34,10 @@ jobs:
         uses: docker/build-push-action@v5
         env:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-          REGISTRY_ALIAS: g8y4y4f9
+          REGISTRY_ALIAS: w0y0d8g6
           REPOSITORY: truefoundrycloud/async_processor
-          # IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
-          IMAGE_TAG: ${{ github.sha }}
+          IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
+          # IMAGE_TAG: ${{ github.sha }}
         with:
           context: .
           push: true
