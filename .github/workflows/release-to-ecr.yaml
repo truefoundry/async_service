@@ -1,8 +1,8 @@
 name: Push image to to ECR
 
 on:
-  pull_request:
-    types: [ opened, synchronize, reopened ]
+  # pull_request:
+  #   types: [ opened, synchronize, reopened ]
   push:
     branches:
       - 'main'
@@ -40,8 +40,8 @@ jobs:
           REGISTRY: ${{ steps.login-ecr.outputs.registry }}
           REGISTRY_ALIAS: w0y0d8g6
           REPOSITORY: truefoundrycloud/async_processor
-          IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
-          # IMAGE_TAG: ${{ github.sha }}
+          # IMAGE_TAG: ${{ github.event.pull_request.head.sha }}
+          IMAGE_TAG: ${{ github.sha }}
         with:
           context: .
           push: true
