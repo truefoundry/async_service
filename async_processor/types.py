@@ -49,7 +49,7 @@ class Input(abc.ABC):
 
     @abc.abstractmethod
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
         ...
 

@@ -61,14 +61,12 @@ class SQSInput(Input):
                     raise InputFetchAckFailure() from ex
 
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
         await run_in_threadpool(
             self._sqs.send_message,
             QueueUrl=self._queue_url,
-            MessageBody=serialized_output_message.decode("utf-8")
-            if isinstance(serialized_output_message, bytes)
-            else serialized_output_message,
+            MessageBody=serialized_input_message.decode("utf-8"),
         )
 
 
