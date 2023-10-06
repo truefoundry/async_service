@@ -49,7 +49,7 @@ class Input(abc.ABC):
 
     @abc.abstractmethod
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
         ...
 
@@ -197,6 +197,7 @@ class WorkerConfig(BaseModel):
             OutputConfig,
         ]
     ] = None
+    num_concurrent_workers: conint(ge=1, le=10) = 1
 
     class Config:
         arbitrary_types_allowed = True

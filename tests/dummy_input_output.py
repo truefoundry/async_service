@@ -31,10 +31,10 @@ class DummyInput(Input):
         await asyncio.sleep(0)
 
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
-        await asyncio.sleep(0.01)
-        self._config.messages.append((serialized_output_message, request_id))
+        self._config.messages.append((serialized_input_message, request_id))
+        await asyncio.sleep(0)
 
 
 class DummyOutput(Output):

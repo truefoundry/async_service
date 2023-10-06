@@ -3,79 +3,105 @@ import uuid
 
 import orjson
 
-from async_processor import InputMessage, OutputMessage, Processor, WorkerConfig
-from async_processor.worker import Worker
+from async_processor import (
+    AsyncProcessor,
+    InputMessage,
+    OutputMessage,
+    Processor,
+    WorkerConfig,
+)
+from async_processor.processor import AsyncProcessorWrapper
+from async_processor.worker import WorkerManager
 from tests.dummy_input_output import DummyInputConfig, DummyOutputConfig
 
 
-async def _test_processor_runner_with_worker_config():
+async def _test_processor_runner_with_output_config():
     class DummyProcessor(Processor):
         def process(self, input_message: InputMessage):
             return input_message
 
-    messages = [
-        InputMessage(request_id=str(uuid.uuid4()), body="1"),
-        InputMessage(request_id=uuid.uuid4().hex, body="2"),
-        InputMessage(request_id="3", body="3"),
-    ]
-    input_config = DummyInputConfig(messages=messages)
-    output_config = DummyOutputConfig(results=[])
-    runner = Worker(
-        processor=DummyProcessor(),
-        worker_config=WorkerConfig(
-            input_config=input_config, output_config=output_config
-        ),
-    )
-    task = asyncio.create_task(runner.run())
-    await asyncio.sleep(0.1)
-    runner.stop()
-    await asyncio.wait_for(task, timeout=1.0)
+    class AsyncDummyProcessor(AsyncProcessor):
+        async def process(self, input_message: InputMessage):
+            await asyncio.sleep(0.01)
+            return input_message
 
-    assert len(messages) > 2
-    assert len(messages) == len(output_config.results), len(output_config.results)
+    for P in (DummyProcessor, AsyncDummyProcessor):
+        messages = [
+            InputMessage(request_id=str(uuid.uuid4()), body="1"),
+            InputMessage(request_id=uuid.uuid4().hex, body="2"),
+            InputMessage(request_id="3", body="3"),
+        ]
+        input_config = DummyInputConfig(messages=messages)
+        output_config = DummyOutputConfig(results=[])
 
-    for input_message, (serialized_output_message, request_id) in zip(
-        messages, output_config.results
-    ):
-        assert input_message.request_id == request_id
-        assert (
-            OutputMessage(**orjson.loads(serialized_output_message)).body
-            == input_message
+        stop_event = asyncio.Event()
+        worker_manager = WorkerManager(
+            processor=AsyncProcessorWrapper(P()),
+            worker_config=WorkerConfig(
+                input_config=input_config,
+                output_config=output_config,
+                num_concurrent_workers=2,
+            ),
+            stop_event=stop_event,
         )
+        task = worker_manager.run_forever()
+        await asyncio.sleep(0.1)
+        stop_event.set()
+        await asyncio.wait_for(task, timeout=1.0)
+
+        assert len(messages) > 2
+        assert len(messages) == len(output_config.results), len(output_config.results)
+
+        for input_message, (serialized_output_message, request_id) in zip(
+            messages, output_config.results
+        ):
+            assert input_message.request_id == request_id
+            assert (
+                OutputMessage(**orjson.loads(serialized_output_message)).body
+                == input_message
+            )
 
 
-async def _test_processor_runner_no_worker_config():
-    results = dict(a=[], b=[], c=[])
-
+async def _test_processor_runner_no_output_config():
     class DummyProcessor(Processor):
         def process(self, input_message: InputMessage):
-            return results[input_message.request_id].append(1)
+            results[input_message.request_id].append(1)
 
-    messages = [
-        InputMessage(request_id="a", body={}),
-        InputMessage(request_id="b", body={}),
-        InputMessage(request_id="c", body={}),
-    ]
-    input_config = DummyInputConfig(messages=messages)
-    runner = Worker(
-        processor=DummyProcessor(),
-        worker_config=WorkerConfig(
-            input_config=input_config,
-        ),
-    )
-    task = asyncio.create_task(runner.run())
-    await asyncio.sleep(0.1)
-    runner.stop()
-    await asyncio.wait_for(task, timeout=1.0)
+    class AsyncDummyProcessor(AsyncProcessor):
+        async def process(self, input_message: InputMessage):
+            await asyncio.sleep(0.01)
+            results[input_message.request_id].append(1)
 
-    assert len(messages) > 2
-    for result in results.values():
-        assert len(result) == 1
+    for P in (DummyProcessor, AsyncDummyProcessor):
+        results = dict(a=[], b=[], c=[])
+        messages = [
+            InputMessage(request_id="a", body={}),
+            InputMessage(request_id="b", body={}),
+            InputMessage(request_id="c", body={}),
+        ]
+        input_config = DummyInputConfig(messages=messages)
+
+        stop_event = asyncio.Event()
+        worker_manager = WorkerManager(
+            processor=AsyncProcessorWrapper(P()),
+            worker_config=WorkerConfig(
+                input_config=input_config,
+            ),
+            stop_event=stop_event,
+        )
+        task = worker_manager.run_forever()
+        await asyncio.sleep(0.1)
+        stop_event.set()
+        await asyncio.wait_for(task, timeout=1.0)
+
+        assert len(messages) > 2
+        for result in results.values():
+            assert len(result) == 1
 
 
 async def _test_processor_runner():
-    await _test_processor_runner_no_worker_config()
-    await _test_processor_runner_with_worker_config()
+    await _test_processor_runner_no_output_config()
+    await _test_processor_runner_with_output_config()
 
 
 def test_processor_runner():

@@ -114,12 +114,12 @@ class NATSInput(Input):
                     raise InputFetchAckFailure() from ex
 
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
         jetstream = await self._get_js_client()
         await jetstream.publish(
             subject=f"{self._root_subject}.{request_id}",
-            payload=serialized_output_message,
+            payload=serialized_input_message,
             timeout=5,
         )
 

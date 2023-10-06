@@ -84,10 +84,12 @@ class KafkaInput(Input):
                         raise InputFetchAckFailure() from ex
 
     async def publish_input_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_input_message: bytes, request_id: str
     ):
         await run_in_threadpool(
-            self._producer.send, topic=self._topic_name, value=serialized_output_message
+            self._producer.send,
+            topic=self._topic_name,
+            value=serialized_input_message,
         )
 
 
