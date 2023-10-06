@@ -197,6 +197,7 @@ class WorkerConfig(BaseModel):
             OutputConfig,
         ]
     ] = None
+    num_concurrent_workers: conint(ge=1, le=10) = 1
 
     class Config:
         arbitrary_types_allowed = True
