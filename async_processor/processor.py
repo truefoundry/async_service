@@ -29,12 +29,6 @@ class BaseProcessor:
     def output_serializer(self, output_message: OutputMessage) -> bytes:
         return orjson.dumps(output_message.dict(), option=orjson.OPT_SERIALIZE_NUMPY)
 
-    def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
-        return ProcessorApp(
-            processor=AsyncProcessorWrapper(self),
-            worker_config=worker_config,
-        ).app
-
 
 class Processor(abc.ABC, BaseProcessor):
     def init(self):
@@ -44,6 +38,12 @@ class Processor(abc.ABC, BaseProcessor):
     def process(self, input_message: InputMessage) -> Any:
         ...
 
+    def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
+        return ProcessorApp(
+            processor=AsyncProcessorWrapper(self),
+            worker_config=worker_config,
+        ).app
+
 
 class AsyncProcessor(abc.ABC, BaseProcessor):
     async def init(self):
@@ -52,6 +52,12 @@ class AsyncProcessor(abc.ABC, BaseProcessor):
     @abc.abstractmethod
     async def process(self, input_message: InputMessage) -> Any:
         ...
+
+    def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
+        return ProcessorApp(
+            processor=AsyncProcessorWrapper(self),
+            worker_config=worker_config,
+        ).app
 
 
 class AsyncProcessorWrapper:

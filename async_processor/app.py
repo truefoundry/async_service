@@ -55,7 +55,7 @@ class ProcessorApp:
         self._app = FastAPI(
             lifespan=self._lifespan,
             docs_url="/",
-            root_path=os.getenv("TFY_SERVICE_ROOT_PATH"),
+            root_path=os.getenv("TFY_SERVICE_ROOT_PATH", ""),
         )
         self._app.get("/health")(self._healthy_route_handler)
         self._app.get("/ready")(self._ready_route_handler)
