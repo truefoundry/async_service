@@ -27,32 +27,34 @@ class KafkaInput(Input):
             bootstrap_servers=self._bootstrap_servers,
             group_id=config.consumer_group,
             enable_auto_commit=False,
-            ssl_check_hostname=config.tls,
             api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
-                    "security_protocol": "SASL_SSL",
+                    "security_protocol": "SASL_SSL" if config.tls else "SASL_PLAINTEXT",
                     "sasl_mechanism": "PLAIN",
                 }
                 if config.auth
-                else {}
+                else {
+                    "security_protocol": "SSL" if config.tls else "PLAINTEXT",
+                }
             ),
         )
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            ssl_check_hostname=config.tls,
             api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
-                    "security_protocol": "SASL_SSL",
+                    "security_protocol": "SASL_SSL" if config.tls else "SASL_PLAINTEXT",
                     "sasl_mechanism": "PLAIN",
                 }
                 if config.auth
-                else {}
+                else {
+                    "security_protocol": "SSL" if config.tls else "PLAINTEXT",
+                }
             ),
         )
 
@@ -100,18 +102,19 @@ class KafkaOutput(Output):
         self._topic_name = config.topic_name
         self._producer = KafkaProducer(
             bootstrap_servers=self._bootstrap_servers,
-            ssl_check_hostname=config.tls,
             batch_size=0,
             api_version_auto_timeout_ms=5000,
             **(
                 {
                     "sasl_plain_username": config.auth.username,
                     "sasl_plain_password": config.auth.password,
-                    "security_protocol": "SASL_SSL",
+                    "security_protocol": "SASL_SSL" if config.tls else "SASL_PLAINTEXT",
                     "sasl_mechanism": "PLAIN",
                 }
                 if config.auth
-                else {}
+                else {
+                    "security_protocol": "SSL" if config.tls else "PLAINTEXT",
+                }
             ),
         )
 
