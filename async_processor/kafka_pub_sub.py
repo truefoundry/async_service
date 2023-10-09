@@ -17,7 +17,6 @@ from async_processor.types import (
 class KafkaInput(Input):
     def __init__(self, config: KafkaInputConfig):
         # comma separated list of bootstrap servers
-        print("This is new code")
         self._bootstrap_servers = config.bootstrap_servers.split(",")
         self._topic_name = config.topic_name
         self._auth = config.auth
@@ -99,7 +98,6 @@ class KafkaInput(Input):
 class KafkaOutput(Output):
     def __init__(self, config: KafkaOutputConfig):
         # comma separated list of bootstrap servers
-        print("This is new code")
         self._bootstrap_servers = config.bootstrap_servers.split(",")
         self._topic_name = config.topic_name
         self._producer = KafkaProducer(
