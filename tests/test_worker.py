@@ -52,6 +52,9 @@ async def _test_processor_runner_with_output_config():
         assert len(messages) > 2
         assert len(messages) == len(output_config.results), len(output_config.results)
 
+        messages.sort(key=lambda x: x.request_id)
+        output_config.results.sort(key=lambda x: x[-1])
+
         for input_message, (serialized_output_message, request_id) in zip(
             messages, output_config.results
         ):
