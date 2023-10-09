@@ -53,14 +53,14 @@ async def _test_processor_runner_with_output_config():
         assert len(messages) == len(output_config.results), len(output_config.results)
 
         messages.sort(key=lambda x: x.request_id)
-        output_config.results.sort(key=lambda x: x[-1])
+        output_config.results.sort(key=lambda x: x.request_id)
 
-        for input_message, (serialized_output_message, request_id) in zip(
-            messages, output_config.results
-        ):
-            assert input_message.request_id == request_id
+        for input_message, output_message in zip(messages, output_config.results):
+            assert input_message.request_id == output_message.request_id
             assert (
-                OutputMessage(**orjson.loads(serialized_output_message)).body
+                OutputMessage(
+                    **orjson.loads(output_message.serialized_output_message)
+                ).body
                 == input_message
             )
 
