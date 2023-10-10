@@ -41,6 +41,12 @@ _MESSAGE_PROCESSING_TIME_MS_HISTOGRAM = Histogram(
     + list(range(16000, 35000, 5000)),  # 4
 )
 
+MESSAGE_INPUT_LATENCY = Gauge(
+    "tfy_async_processor_input_latency_ns",
+    "Latency incurreed in the input queue",
+    multiprocess_mode="livemax",
+)
+
 _OUTPUT_MESSAGE_PUBLISH_TIME_MS = Gauge(
     "tfy_async_processor_output_message_publish_time_ms",
     "Time taken to publish output message in milliseconds",

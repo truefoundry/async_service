@@ -15,6 +15,7 @@ class ProcessStatus(str, enum.Enum):
 class InputMessage(BaseModel):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: Any
+    published_at_epoch_ns: Optional[int] = None
 
 
 class OutputMessage(BaseModel):
