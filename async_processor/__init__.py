@@ -3,6 +3,7 @@ from async_processor.function_service import FunctionAsyncExecutor
 from async_processor.processor import AsyncProcessor, Processor
 from async_processor.types import (
     AWSAccessKeyAuth,
+    CoreNATSOutputConfig,
     Input,
     InputConfig,
     InputMessage,
@@ -41,4 +42,5 @@ __all__ = [
     "KafkaOutputConfig",
     "KafkaSASLAuth",
     "AsyncProcessor",
+    "CoreNATSOutputConfig",
 ]
