@@ -1,7 +1,7 @@
 import time
 from contextlib import contextmanager
 
-from prometheus_client import Counter, Gauge
+from prometheus_client import Counter, Gauge, Histogram
 
 from async_processor.logger import logger
 from async_processor.types import (
@@ -26,6 +26,19 @@ _MESSAGE_PROCESSING_TIME_MS = Gauge(
     "tfy_async_processor_processing_time_ms",
     "Time taken to process a single message in milliseconds",
     multiprocess_mode="livemax",
+)
+
+_MESSAGE_PROCESSING_TIME_MS_HISTOGRAM = Histogram(
+    "tfy_async_processor_processing_time_histogram_ms",
+    "Time taken to process a single message in milliseconds histogram",
+    ["status"],
+    # This is a catch all configuration.
+    # Do not do performance testing using this.
+    buckets=list(range(100, 550, 50))  # 9
+    + list(range(750, 5250, 250))  # 18
+    + list(range(5500, 10500, 500))  # 10
+    + list(range(11000, 16000, 1000))  # 5
+    + list(range(16000, 35000, 5000)),  # 4
 )
 
 _OUTPUT_MESSAGE_PUBLISH_TIME_MS = Gauge(
@@ -58,21 +71,34 @@ def _perf_counter_ms() -> float:
 def collect_total_message_processing_metrics():
     _MESSAGES_IN_PROCESS.inc()
     start = _perf_counter_ms()
+    end = None
+    exception = None
     try:
         yield
+        end = _perf_counter_ms()
     except Exception as ex:
+        end = _perf_counter_ms()
+        exception = ex
         _MESSAGES_PROCESSED.labels(status=ProcessStatus.FAILED.value).inc(1)
         raise ex
-    else:
-        _MESSAGES_PROCESSED.labels(status=ProcessStatus.SUCCESS.value).inc(1)
     finally:
-        message_processing_time = _perf_counter_ms() - start
+        _MESSAGES_IN_PROCESS.dec(1)
+
+        status = (
+            ProcessStatus.SUCCESS.value if not exception else ProcessStatus.FAILED.value
+        )
+
+        _MESSAGES_PROCESSED.labels(status=status).inc(1)
+
+        message_processing_time = end - start
         logger.info(
             "Time taken to process message: %f milliseconds",
             message_processing_time,
         )
         _MESSAGE_PROCESSING_TIME_MS.set(message_processing_time)
-        _MESSAGES_IN_PROCESS.dec(1)
+        _MESSAGE_PROCESSING_TIME_MS_HISTOGRAM.labels(status=status).observe(
+            message_processing_time
+        )
 
 
 @contextmanager
