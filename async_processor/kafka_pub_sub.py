@@ -125,6 +125,3 @@ class KafkaOutput(Output):
             topic=self._topic_name, value=serialized_output_message
         )
         await run_in_threadpool(future.get)
-
-    async def get_output_message(self, request_id: str) -> bytes:
-        raise NotImplementedError

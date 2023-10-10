@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import asyncio
 from contextlib import asynccontextmanager
-from typing import AsyncIterator, List, Optional, Tuple
+from typing import AsyncIterator, List, NamedTuple, Optional
 
 import orjson
 
@@ -37,6 +37,11 @@ class DummyInput(Input):
         await asyncio.sleep(0)
 
 
+class _Result(NamedTuple):
+    request_id: str
+    serialized_output_message: bytes
+
+
 class DummyOutput(Output):
     def __init__(self, config: DummyOutputConfig):
         self._config = config
@@ -44,15 +49,17 @@ class DummyOutput(Output):
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: str
     ):
-        self._config.results.append((serialized_output_message, request_id))
+        self._config.results.append(
+            _Result(
+                serialized_output_message=serialized_output_message,
+                request_id=request_id,
+            )
+        )
         await asyncio.sleep(0)
-
-    async def get_output_message(self, request_id: str) -> bytes:
-        raise NotImplementedError
 
 
 class DummyOutputConfig(OutputConfig):
-    results: List[Tuple[bytes, str]]
+    results: List[_Result]
 
     class Config:
         copy_on_model_validation = False

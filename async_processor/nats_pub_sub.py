@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
-from nats import connect
+from nats import NATS, connect
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
 from nats.js.api import (
@@ -15,6 +15,7 @@ from nats.js.errors import BadRequestError
 
 from async_processor.logger import logger
 from async_processor.types import (
+    CoreNATSOutputConfig,
     Input,
     InputFetchAckFailure,
     InputMessageFetchFailure,
@@ -55,23 +56,29 @@ def _get_result_store_stream_config(root_subject: str) -> StreamConfig:
 
 class NATSInput(Input):
     def __init__(self, config: NATSInputConfig):
-        self._nats_url = config.nats_url
-        self._root_subject = config.root_subject
-        self._consumer_name = config.consumer_name
-        self._wait_time_seconds = config.wait_time_seconds
+        self._config = config
         self._js = None
         self._psub = None
 
     async def initialize_stream(self):
         await _initialize_stream(
             jetstream=await self._get_js_client(),
-            stream_config=_get_work_queue_stream_config(self._root_subject),
+            stream_config=_get_work_queue_stream_config(self._config.root_subject),
         )
 
     async def _get_js_client(self):
         if self._js:
             return self._js
-        self._js = (await connect(self._nats_url)).jetstream(timeout=10)
+
+        auth = self._config.auth.dict() if self._config.auth else {}
+        self._js = (
+            await connect(
+                self._config.nats_url,
+                ping_interval=30,
+                max_outstanding_pings=2,
+                **auth,
+            )
+        ).jetstream(timeout=10)
         return self._js
 
     async def _get_psub(self):
@@ -79,10 +86,10 @@ class NATSInput(Input):
             return self._psub
         jetstream = await self._get_js_client()
         self._psub = await jetstream.pull_subscribe(
-            subject=_get_work_queue_subject_pattern(self._root_subject),
-            durable=self._consumer_name,
+            subject=_get_work_queue_subject_pattern(self._config.root_subject),
+            durable=self._config.consumer_name,
             config=ConsumerConfig(
-                durable_name=self._consumer_name,
+                durable_name=self._config.consumer_name,
             ),
         )
         return self._psub
@@ -94,7 +101,7 @@ class NATSInput(Input):
         psub = await self._get_psub()
         msgs = []
         try:
-            msgs = await psub.fetch(1, timeout=self._wait_time_seconds)
+            msgs = await psub.fetch(1, timeout=self._config.wait_time_seconds)
         except NatsTimeoutError:
             logger.debug("No message in queue")
         except Exception as ex:
@@ -118,7 +125,7 @@ class NATSInput(Input):
     ):
         jetstream = await self._get_js_client()
         await jetstream.publish(
-            subject=f"{self._root_subject}.{request_id}",
+            subject=f"{self._config.root_subject}.{request_id}",
             payload=serialized_input_message,
             timeout=5,
         )
@@ -126,21 +133,29 @@ class NATSInput(Input):
 
 class NATSOutput(Output):
     def __init__(self, config: NATSOutputConfig):
-        self._nats_url = config.nats_url
+        self._config = config
         self._js = None
-        self._root_subject = config.root_subject
 
     async def _get_js_client(self) -> JetStreamContext:
         if self._js:
             return self._js
-        self._js = (await connect(self._nats_url)).jetstream(timeout=10)
+
+        auth = self._config.auth.dict() if self._config.auth else {}
+        self._js = (
+            await connect(
+                self._config.nats_url,
+                ping_interval=30,
+                max_outstanding_pings=2,
+                **auth,
+            )
+        ).jetstream(timeout=10)
         return self._js
 
     async def initialize_stream(self):
         jetstream = await self._get_js_client()
         await _initialize_stream(
             jetstream=jetstream,
-            stream_config=_get_result_store_stream_config(self._root_subject),
+            stream_config=_get_result_store_stream_config(self._config.root_subject),
         )
 
     async def publish_output_message(
@@ -148,7 +163,7 @@ class NATSOutput(Output):
     ):
         jetstream = await self._get_js_client()
         await jetstream.publish(
-            subject=f"{self._root_subject}.{request_id}",
+            subject=f"{self._config.root_subject}.{request_id}",
             payload=serialized_output_message,
             timeout=5,
         )
@@ -156,7 +171,7 @@ class NATSOutput(Output):
     async def get_output_message(self, request_id: str, timeout: float = 1.0) -> bytes:
         jetstream = await self._get_js_client()
         sub = await jetstream.subscribe(
-            subject=f"{self._root_subject}.{request_id}",
+            subject=f"{self._config.root_subject}.{request_id}",
             config=ConsumerConfig(ack_policy=AckPolicy.NONE),
         )
         try:
@@ -166,6 +181,34 @@ class NATSOutput(Output):
                 f"No message received for request_id: {request_id}"
             ) from ex
         return msg.data
+
+
+class CoreNATSOutput(Output):
+    def __init__(self, config: CoreNATSOutputConfig):
+        self._config = config
+        self._nc = None
+
+    async def _get_nats_client(self) -> NATS:
+        if self._nc:
+            return self._nc
+
+        auth = self._config.auth.dict() if self._config.auth else {}
+        self._nc = await connect(
+            self._config.nats_url,
+            ping_interval=30,
+            max_outstanding_pings=2,
+            **auth,
+        )
+        return self._nc
+
+    async def publish_output_message(
+        self, serialized_output_message: bytes, request_id: str
+    ):
+        nats = await self._get_nats_client()
+        await nats.publish(
+            subject=f"{self._config.root_subject}.{request_id}",
+            payload=serialized_output_message,
+        )
 
 
 async def _initialize_stream(jetstream: JetStreamContext, stream_config: StreamConfig):

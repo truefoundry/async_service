@@ -1,9 +1,10 @@
-import time
+import asyncio
+from typing import Optional
 
-import requests
+import aiohttp
 from pydantic import BaseSettings, confloat
 
-from async_processor import InputMessage, Processor
+from async_processor import AsyncProcessor, InputMessage
 from async_processor.logger import logger
 
 
@@ -18,11 +19,19 @@ class Settings(BaseSettings):
 settings = Settings()
 
 
-class SidecarProcessor(Processor):
-    def init(self):
+class SidecarProcessor(AsyncProcessor):
+    def __init__(self):
+        self._client_session: Optional[aiohttp.ClientSession] = None
+
+    async def init(self):
+        self._client_session = aiohttp.ClientSession()
         while True:
             try:
-                requests.head(settings.destination_url)
+                async with self._client_session.head(
+                    settings.destination_url,
+                    timeout=settings.request_timeout,
+                ):
+                    ...
                 break
             except Exception as ex:
                 logger.warning(
@@ -30,16 +39,16 @@ class SidecarProcessor(Processor):
                     settings.destination_url,
                     str(ex),
                 )
-                time.sleep(1.0)
+                await asyncio.sleep(1.0)
 
-    def process(self, input_message: InputMessage) -> str:
-        response = requests.post(
+    async def process(self, input_message: InputMessage) -> str:
+        async with self._client_session.post(
             settings.destination_url,
             json=input_message.body,
             timeout=settings.request_timeout,
-        )
-        response.raise_for_status()
-        return response.text
+        ) as response:
+            response.raise_for_status()
+            return await response.text()
 
 
 app = SidecarProcessor().build_app()
