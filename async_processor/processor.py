@@ -31,6 +31,8 @@ class BaseProcessor:
 
 
 class Processor(abc.ABC, BaseProcessor):
+    # TODO: init is not good enough
+    # use a contextmanager here so that we can call it at startup and shutdown
     def init(self):
         return
 
@@ -46,6 +48,8 @@ class Processor(abc.ABC, BaseProcessor):
 
 
 class AsyncProcessor(abc.ABC, BaseProcessor):
+    # TODO: init is not good enough
+    # use a contextmanager here so that we can call it at startup and shutdown
     async def init(self):
         return
 
