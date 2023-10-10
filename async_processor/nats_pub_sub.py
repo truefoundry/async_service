@@ -71,7 +71,14 @@ class NATSInput(Input):
             return self._js
 
         auth = self._config.auth.dict() if self._config.auth else {}
-        self._js = (await connect(self._config.nats_url, **auth)).jetstream(timeout=10)
+        self._js = (
+            await connect(
+                self._config.nats_url,
+                ping_interval=30,
+                max_outstanding_pings=2,
+                **auth,
+            )
+        ).jetstream(timeout=10)
         return self._js
 
     async def _get_psub(self):
@@ -134,7 +141,14 @@ class NATSOutput(Output):
             return self._js
 
         auth = self._config.auth.dict() if self._config.auth else {}
-        self._js = (await connect(self._config.nats_url, **auth)).jetstream(timeout=10)
+        self._js = (
+            await connect(
+                self._config.nats_url,
+                ping_interval=30,
+                max_outstanding_pings=2,
+                **auth,
+            )
+        ).jetstream(timeout=10)
         return self._js
 
     async def initialize_stream(self):
@@ -179,7 +193,12 @@ class CoreNATSOutput(Output):
             return self._nc
 
         auth = self._config.auth.dict() if self._config.auth else {}
-        self._nc = await connect(self._config.nats_url, **auth)
+        self._nc = await connect(
+            self._config.nats_url,
+            ping_interval=30,
+            max_outstanding_pings=2,
+            **auth,
+        )
         return self._nc
 
     async def publish_output_message(
