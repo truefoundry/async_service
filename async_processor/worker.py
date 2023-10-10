@@ -3,10 +3,12 @@ from __future__ import annotations
 import asyncio
 import os
 import signal
+import time
 from typing import TYPE_CHECKING, Optional, Union
 
 from async_processor.logger import logger
 from async_processor.prometheus_metrics import (
+    MESSAGE_INPUT_LATENCY,
     collect_input_message_fetch_metrics,
     collect_output_message_publish_metrics,
     collect_total_message_processing_metrics,
@@ -100,6 +102,7 @@ class _Worker:
     async def _handle_msg(
         self,
         serialized_input_message: Union[str, bytes],
+        received_at_epoch_ns: int,
     ):
         serialized_output_message: Optional[bytes] = None
         input_message: Optional[InputMessage] = None
@@ -130,6 +133,10 @@ class _Worker:
                     )
                 raise ex
             finally:
+                if input_message and input_message.published_at_epoch_ns:
+                    MESSAGE_INPUT_LATENCY.set(
+                        received_at_epoch_ns - input_message.published_at_epoch_ns
+                    )
                 if serialized_output_message and input_message:
                     await self._publish_response(
                         serialized_output_message=serialized_output_message,
@@ -149,8 +156,10 @@ class _Worker:
                     async with self._input.get_input_message() as serialized_input_message:
                         if not serialized_input_message:
                             continue
+                        received_at_epoch_ns = time.time_ns()
                         await self._handle_msg(
-                            serialized_input_message=serialized_input_message
+                            serialized_input_message=serialized_input_message,
+                            received_at_epoch_ns=received_at_epoch_ns,
                         )
             except Exception:
                 logger.exception("error raised in the main worker loop")
