@@ -85,7 +85,6 @@ def collect_total_message_processing_metrics():
     except Exception as ex:
         end = _perf_counter_ms()
         exception = ex
-        _MESSAGES_PROCESSED.labels(status=ProcessStatus.FAILED.value).inc(1)
         raise ex
     finally:
         _MESSAGES_IN_PROCESS.dec(1)
