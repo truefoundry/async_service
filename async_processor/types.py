@@ -74,6 +74,11 @@ class KafkaSASLAuth(BaseModel):
     password: str
 
 
+class NATSUserPasswordAuth(BaseModel):
+    user: str
+    password: str
+
+
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
 
@@ -95,6 +100,7 @@ class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
     nats_url: Union[str, List[str]]
+    auth: Optional[NATSUserPasswordAuth] = None
     root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
     consumer_name: constr(regex=r"^[a-zA-Z0-9\-_]{1,32}$")
     wait_time_seconds: confloat(ge=1) = 5
@@ -128,9 +134,8 @@ class Output(abc.ABC):
     ):
         ...
 
-    @abc.abstractmethod
     async def get_output_message(self, request_id: str) -> Optional[OutputMessage]:
-        ...
+        raise NotImplementedError
 
 
 class OutputConfig(abc.ABC, BaseModel):
@@ -161,11 +166,25 @@ class NATSOutputConfig(OutputConfig):
 
     nats_url: Union[str, List[str]]
     root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
+    auth: Optional[NATSUserPasswordAuth] = None
 
     def to_output(self) -> Output:
         from async_processor.nats_pub_sub import NATSOutput
 
         return NATSOutput(self)
+
+
+class CoreNATSOutputConfig(OutputConfig):
+    type: constr(regex=r"^core-nats$") = "core-nats"
+
+    nats_url: Union[str, List[str]]
+    root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
+    auth: Optional[NATSUserPasswordAuth] = None
+
+    def to_output(self) -> Output:
+        from async_processor.nats_pub_sub import CoreNATSOutput
+
+        return CoreNATSOutput(self)
 
 
 class KafkaOutputConfig(OutputConfig):

@@ -57,9 +57,6 @@ class DummyOutput(Output):
         )
         await asyncio.sleep(0)
 
-    async def get_output_message(self, request_id: str) -> bytes:
-        raise NotImplementedError
-
 
 class DummyOutputConfig(OutputConfig):
     results: List[_Result]
