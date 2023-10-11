@@ -4,6 +4,7 @@ import asyncio
 import os
 import signal
 import time
+from contextlib import AsyncExitStack
 from typing import TYPE_CHECKING, Optional, Union
 
 from async_processor.logger import logger
@@ -14,7 +15,9 @@ from async_processor.prometheus_metrics import (
     collect_total_message_processing_metrics,
 )
 from async_processor.types import (
+    Input,
     InputMessage,
+    Output,
     OutputMessage,
     ProcessStatus,
     WorkerConfig,
@@ -77,32 +80,31 @@ class WorkerManager:
         return task
 
 
+async def _publish_response(
+    serialized_output_message: bytes,
+    request_id: str,
+    output: Optional[Output],
+):
+    if output:
+        with collect_output_message_publish_metrics():
+            await output.publish_output_message(
+                serialized_output_message=serialized_output_message,
+                request_id=request_id,
+            )
+    else:
+        logger.debug("Skipping publishing response as output config is not present")
+
+
 class _Worker:
     def __init__(self, worker_config: WorkerConfig, processor: AsyncProcessorWrapper):
-        self._input = worker_config.input_config.to_input()
-        self._output = (
-            worker_config.output_config.to_output()
-            if worker_config.output_config
-            else None
-        )
+        self._worker_config = worker_config
         self._processor = processor
-
-    async def _publish_response(
-        self, serialized_output_message: bytes, request_id: str
-    ):
-        if self._output:
-            with collect_output_message_publish_metrics():
-                await self._output.publish_output_message(
-                    serialized_output_message=serialized_output_message,
-                    request_id=request_id,
-                )
-        else:
-            logger.debug("Skipping publishing response as output config is not present")
 
     async def _handle_msg(
         self,
         serialized_input_message: Union[str, bytes],
         received_at_epoch_ns: int,
+        output: Optional[Output],
     ):
         serialized_output_message: Optional[bytes] = None
         input_message: Optional[InputMessage] = None
@@ -138,10 +140,23 @@ class _Worker:
                         received_at_epoch_ns - input_message.published_at_epoch_ns
                     )
                 if serialized_output_message and input_message:
-                    await self._publish_response(
+                    await _publish_response(
                         serialized_output_message=serialized_output_message,
                         request_id=input_message.request_id,
+                        output=output,
                     )
+
+    async def _process_single_step(self, input_: Input, output: Optional[Output]):
+        with collect_input_message_fetch_metrics():
+            async with input_.get_input_message() as serialized_input_message:
+                if not serialized_input_message:
+                    return
+                received_at_epoch_ns = time.time_ns()
+                await self._handle_msg(
+                    serialized_input_message=serialized_input_message,
+                    received_at_epoch_ns=received_at_epoch_ns,
+                    output=output,
+                )
 
     async def run(self, stop_event: asyncio.Event):
         # Streams should be bootstrapped separately
@@ -150,17 +165,18 @@ class _Worker:
         # if hasattr(self._output, "initialize_stream"):
         #     await self._output.initialize_stream()
         logger.info("Polling messages")
-        while not stop_event.is_set():
-            try:
-                with collect_input_message_fetch_metrics():
-                    async with self._input.get_input_message() as serialized_input_message:
-                        if not serialized_input_message:
-                            continue
-                        received_at_epoch_ns = time.time_ns()
-                        await self._handle_msg(
-                            serialized_input_message=serialized_input_message,
-                            received_at_epoch_ns=received_at_epoch_ns,
-                        )
-            except Exception:
-                logger.exception("error raised in the main worker loop")
+        async with AsyncExitStack() as stack:
+            input_ = await stack.enter_async_context(
+                self._worker_config.input_config.to_input()
+            )
+            output = None
+            if self._worker_config.output_config:
+                output = await stack.enter_async_context(
+                    self._worker_config.output_config.to_output()
+                )
+            while not stop_event.is_set():
+                try:
+                    await self._process_single_step(input_=input_, output=output)
+                except Exception:
+                    logger.exception("error raised in the main worker loop")
         logger.info("Worker finished")

@@ -41,6 +41,12 @@ class OutputMessageFetchTimeoutError(Exception):
 
 
 class Input(abc.ABC):
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return
+
     @asynccontextmanager
     @abc.abstractmethod
     async def get_input_message(
@@ -129,6 +135,12 @@ class KafkaInputConfig(InputConfig):
 
 
 class Output(abc.ABC):
+    async def __aenter__(self):
+        return self
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        return
+
     @abc.abstractmethod
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: str
