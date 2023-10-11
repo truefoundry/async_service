@@ -114,11 +114,14 @@ class _Worker:
                     serialized_input_message
                 )
                 result = await self._processor.process(input_message=input_message)
-                output_message = OutputMessage(
-                    status=ProcessStatus.SUCCESS,
-                    request_id=input_message.request_id,
-                    body=result,
-                )
+                if isinstance(result, OutputMessage):
+                    output_message = result
+                else:
+                    output_message = OutputMessage(
+                        status=ProcessStatus.SUCCESS,
+                        request_id=input_message.request_id,
+                        body=result,
+                    )
                 serialized_output_message = self._processor.output_serializer(
                     output_message
                 )

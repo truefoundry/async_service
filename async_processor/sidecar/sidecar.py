@@ -4,7 +4,7 @@ from typing import Optional
 import aiohttp
 from pydantic import BaseSettings, confloat
 
-from async_processor import AsyncProcessor, InputMessage
+from async_processor import AsyncProcessor, InputMessage, OutputMessage, ProcessStatus
 from async_processor.logger import logger
 
 
@@ -41,14 +41,19 @@ class SidecarProcessor(AsyncProcessor):
                 )
                 await asyncio.sleep(1.0)
 
-    async def process(self, input_message: InputMessage) -> str:
+    async def process(self, input_message: InputMessage) -> OutputMessage:
         async with self._client_session.post(
             settings.destination_url,
             json=input_message.body,
             timeout=settings.request_timeout,
         ) as response:
-            response.raise_for_status()
-            return await response.text()
+            return OutputMessage(
+                request_id=input_message.request_id,
+                status=ProcessStatus.SUCCESS if response.ok else ProcessStatus.FAILED,
+                body=await response.text(),
+                status_code=response.status,
+                content_type=response.headers["content-type"],
+            )
 
 
 app = SidecarProcessor().build_app()

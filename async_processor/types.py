@@ -24,6 +24,10 @@ class OutputMessage(BaseModel):
     body: Optional[Any] = None
     error: Optional[str] = None
 
+    # these are experimental fields
+    status_code: Optional[str] = None
+    content_type: Optional[str] = None
+
     class Config:
         use_enum_values = True
 
