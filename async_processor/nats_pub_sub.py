@@ -60,12 +60,12 @@ class NATSInput(Input):
         return self._js
 
     async def _validate_consumer_exists(self):
-        jsm = (await self._get_nats_client()).jsm(timeout=10)
-        stream = await jsm.find_stream_name_by_subject(
+        jetstream = await self._get_js_client()
+        stream = await jetstream.find_stream_name_by_subject(
             _get_work_queue_subject_pattern(self._config.root_subject)
         )
         try:
-            await jsm.consumer_info(stream, self._config.consumer_name)
+            await jetstream.consumer_info(stream, self._config.consumer_name)
         except NotFoundError as ex:
             raise Exception(
                 f"Consumer {self._config.consumer_name!r} does not exist."
@@ -91,26 +91,33 @@ class NATSInput(Input):
         self,
     ) -> AsyncIterator[Optional[bytes]]:
         psub = await self._get_psub()
-        msgs = []
+        msg = None
         try:
-            msgs = await psub.fetch(1, timeout=self._config.wait_time_seconds)
+            # NOTE: default delta between expiry and timeout is 100ms.
+            # This is hardcoded in the `fetch` public method and is too tight.
+            # We are using the `_fetch_one` protected member directly to set custom
+            # expiry.
+            msg = await psub._fetch_one(
+                timeout=self._config.wait_time_seconds,
+                # This is in NS
+                expires=int((self._config.wait_time_seconds - 0.8) * 1_000_000_000),
+            )
         except NatsTimeoutError:
             logger.debug("No message in queue")
         except Exception as ex:
             raise InputMessageFetchFailure() from ex
 
-        if len(msgs) == 0:
+        if not msg:
             yield None
             return
 
-        for msg in msgs:
+        try:
+            yield msg.data
+        finally:
             try:
-                yield msg.data
-            finally:
-                try:
-                    await msg.ack()
-                except Exception as ex:
-                    raise InputFetchAckFailure() from ex
+                await msg.ack()
+            except Exception as ex:
+                raise InputFetchAckFailure() from ex
 
     async def publish_input_message(
         self, serialized_input_message: bytes, request_id: str
