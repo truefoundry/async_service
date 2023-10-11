@@ -135,21 +135,29 @@ class NATSOutput(Output):
     def __init__(self, config: NATSOutputConfig):
         self._config = config
         self._js = None
+        self._nc = None
 
     async def _get_js_client(self) -> JetStreamContext:
         if self._js:
             return self._js
 
         auth = self._config.auth.dict() if self._config.auth else {}
-        self._js = (
-            await connect(
-                self._config.nats_url,
-                ping_interval=30,
-                max_outstanding_pings=2,
-                **auth,
-            )
-        ).jetstream(timeout=10)
+        self._nc = await connect(
+            self._config.nats_url,
+            ping_interval=30,
+            max_outstanding_pings=2,
+            **auth,
+        )
+        self._js = self._nc.jetstream(timeout=10)
         return self._js
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if not self._nc:
+            return
+        try:
+            await self._nc.close()
+        except Exception:
+            logger.exception("Failed to drain and close nats connection")
 
     async def initialize_stream(self):
         jetstream = await self._get_js_client()
