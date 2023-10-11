@@ -2294,4 +2294,4 @@ sqs = ["boto3"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.12"
-content-hash = "bf5f40b88e95791590455ab3cb0a87bb25ed5a6e4024118e989d2b4de27eef85"
+content-hash = "03ef6f8fe3436b33d1e0371859acd2b165348016790f1111ce976c6ba46986d7"
