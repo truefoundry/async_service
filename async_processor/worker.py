@@ -159,11 +159,6 @@ class _Worker:
                 )
 
     async def run(self, stop_event: asyncio.Event):
-        # Streams should be bootstrapped separately
-        # if hasattr(self._input, "initialize_stream"):
-        #     await self._input.initialize_stream()
-        # if hasattr(self._output, "initialize_stream"):
-        #     await self._output.initialize_stream()
         logger.info("Polling messages")
         async with AsyncExitStack() as stack:
             input_ = await stack.enter_async_context(
