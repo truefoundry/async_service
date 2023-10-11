@@ -226,6 +226,7 @@ class WorkerConfig(BaseModel):
             SQSOutputConfig,
             NATSOutputConfig,
             KafkaOutputConfig,
+            CoreNATSOutputConfig,
             OutputConfig,
         ]
     ] = None
