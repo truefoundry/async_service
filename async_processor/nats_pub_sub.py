@@ -188,6 +188,14 @@ class CoreNATSOutput(Output):
         self._config = config
         self._nc = None
 
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if not self._nc:
+            return
+        try:
+            await self._nc.close()
+        except Exception:
+            logger.exception("Failed to drain and close nats connection")
+
     async def _get_nats_client(self) -> NATS:
         if self._nc:
             return self._nc
