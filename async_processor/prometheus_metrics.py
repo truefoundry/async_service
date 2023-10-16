@@ -96,7 +96,7 @@ def collect_total_message_processing_metrics():
         _MESSAGES_PROCESSED.labels(status=status).inc(1)
 
         message_processing_time = end - start
-        logger.info(
+        logger.debug(
             "Time taken to process message: %f milliseconds",
             message_processing_time,
         )
@@ -116,7 +116,7 @@ def collect_output_message_publish_metrics():
         raise ex
     else:
         response_publish_time = _perf_counter_ms() - start
-        logger.info(
+        logger.debug(
             "Time taken to publish response back: %f milliseconds",
             response_publish_time,
         )

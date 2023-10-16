@@ -162,7 +162,7 @@ class _Worker:
                 )
 
     async def run(self, stop_event: asyncio.Event):
-        logger.info("Polling messages")
+        logger.debug("Polling messages")
         async with AsyncExitStack() as stack:
             input_ = await stack.enter_async_context(
                 self._worker_config.input_config.to_input()
@@ -177,4 +177,4 @@ class _Worker:
                     await self._process_single_step(input_=input_, output=output)
                 except Exception:
                     logger.exception("error raised in the main worker loop")
-        logger.info("Worker finished")
+        logger.debug("Worker finished")

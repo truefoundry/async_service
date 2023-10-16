@@ -109,7 +109,9 @@ class ProcessorApp:
         start = time.perf_counter()
         output = self._processor.process(body)
         time_taken_for_request = time.perf_counter() - start
-        logger.info("Time taken to process request: %f seconds", time_taken_for_request)
+        logger.debug(
+            "Time taken to process request: %f seconds", time_taken_for_request
+        )
 
         return Response(
             content=self._processor.output_serializer(
