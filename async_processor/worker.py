@@ -108,7 +108,7 @@ class _Worker:
     ):
         serialized_output_message: Optional[bytes] = None
         input_message: Optional[InputMessage] = None
-        with collect_total_message_processing_metrics():
+        with collect_total_message_processing_metrics() as collector:
             try:
                 input_message = self._processor.input_deserializer(
                     serialized_input_message
@@ -137,6 +137,8 @@ class _Worker:
                         output_message
                     )
                 raise ex
+            else:
+                collector.set_output_status(output_message.status.value)
             finally:
                 if input_message and input_message.published_at_epoch_ns:
                     MESSAGE_INPUT_LATENCY.set(
