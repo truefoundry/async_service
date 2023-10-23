@@ -75,7 +75,7 @@ def _perf_counter_ms() -> float:
 
 class collect_total_message_processing_metrics:
     def __init__(self):
-        self._start = None
+        self._start: float = None  # type: ignore
         self._output_status = None
 
     def __enter__(self):
@@ -106,8 +106,6 @@ class collect_total_message_processing_metrics:
         _MESSAGE_PROCESSING_TIME_MS_HISTOGRAM.labels(status=status).observe(
             message_processing_time
         )
-        if exc_value is not None:
-            raise exc_value
 
 
 @contextmanager
