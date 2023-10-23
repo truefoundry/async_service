@@ -73,29 +73,31 @@ def _perf_counter_ms() -> float:
     return time.perf_counter() * 1000
 
 
-@contextmanager
-def collect_total_message_processing_metrics():
-    _MESSAGES_IN_PROCESS.inc()
-    start = _perf_counter_ms()
-    end = None
-    exception = None
-    try:
-        yield
+class collect_total_message_processing_metrics:
+    def __init__(self):
+        self._start: float = None  # type: ignore
+        self._output_status = None
+
+    def __enter__(self):
+        _MESSAGES_IN_PROCESS.inc()
+        self._start = _perf_counter_ms()
+        return self
+
+    def set_output_status(self, value):
+        self._output_status = value
+
+    def __exit__(self, exc_type, exc_value, exc_tb):
         end = _perf_counter_ms()
-    except Exception as ex:
-        end = _perf_counter_ms()
-        exception = ex
-        raise ex
-    finally:
         _MESSAGES_IN_PROCESS.dec(1)
-
-        status = (
-            ProcessStatus.SUCCESS.value if not exception else ProcessStatus.FAILED.value
-        )
-
+        if self._output_status is not None:
+            status = self._output_status
+        else:
+            if exc_value is None:
+                status = ProcessStatus.SUCCESS.value
+            else:
+                status = ProcessStatus.FAILED.value
         _MESSAGES_PROCESSED.labels(status=status).inc(1)
-
-        message_processing_time = end - start
+        message_processing_time = end - self._start
         logger.debug(
             "Time taken to process message: %f milliseconds",
             message_processing_time,
