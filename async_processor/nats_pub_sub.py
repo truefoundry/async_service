@@ -1,4 +1,5 @@
 from contextlib import asynccontextmanager
+from functools import partial
 from typing import AsyncIterator, Optional
 
 from nats import NATS, connect
@@ -28,6 +29,10 @@ def _get_result_store_subject_pattern(root_subject: str):
     return f"{root_subject}.>"
 
 
+async def _log_nats_connection_event(event: str):
+    logger.warning("NATS connection event: %s", event)
+
+
 class NATSInput(Input):
     def __init__(self, config: NATSInputConfig):
         self._config = config
@@ -48,6 +53,8 @@ class NATSInput(Input):
             self._config.nats_url,
             ping_interval=30,
             max_outstanding_pings=2,
+            reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
+            disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
             **auth,
         )
         return self._nc
@@ -145,6 +152,8 @@ class NATSOutput(Output):
             self._config.nats_url,
             ping_interval=30,
             max_outstanding_pings=2,
+            reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
+            disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
             **auth,
         )
         self._js = self._nc.jetstream(timeout=10)
@@ -205,6 +214,8 @@ class CoreNATSOutput(Output):
             self._config.nats_url,
             ping_interval=30,
             max_outstanding_pings=2,
+            reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
+            disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
             **auth,
         )
         return self._nc
