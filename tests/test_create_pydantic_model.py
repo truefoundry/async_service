@@ -23,8 +23,8 @@ def dummy_function_with_annotations(
 class DummyModel(BaseModel):
     a: int = Field(description="a description")
     b: str
-    c: bool = True
     d: List[str]
+    c: bool = True
 
 
 def test_create_pydantic_model_from_function_signature():
