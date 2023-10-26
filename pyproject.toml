@@ -46,6 +46,14 @@ target_version = ["py38", "py39", "py310"]
 profile = "black"
 
 [tool.ruff]
+select = [
+    "E",  # pycodestyle errors
+    "W",  # pycodestyle warnings
+    "F",  # pyflakes
+    "C",  # flake8-comprehensions
+    "B",  # flake8-bugbear
+    "Q",  # flake8-quotes
+]
 ignore = ["E501"]
 
 [tool.pytest.ini_options]

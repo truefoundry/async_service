@@ -125,6 +125,7 @@ class _Worker:
                 serialized_output_message = self._processor.output_serializer(
                     output_message
                 )
+                collector.set_output_status(output_message.status)
             except Exception as ex:
                 logger.exception("error raised while handling message")
                 if input_message:
@@ -137,8 +138,6 @@ class _Worker:
                         output_message
                     )
                 raise ex
-            else:
-                collector.set_output_status(output_message.status.value)
             finally:
                 if input_message and input_message.published_at_epoch_ns:
                     MESSAGE_INPUT_LATENCY.set(

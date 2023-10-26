@@ -76,7 +76,7 @@ async def _test_processor_runner_no_output_config():
             results[input_message.request_id].append(1)
 
     for P in (DummyProcessor, AsyncDummyProcessor):
-        results = dict(a=[], b=[], c=[])
+        results = {"a": [], "b": [], "c": []}
         messages = [
             InputMessage(request_id="a", body={}),
             InputMessage(request_id="b", body={}),
