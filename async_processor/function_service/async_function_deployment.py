@@ -140,9 +140,9 @@ class FunctionAsyncExecutor:
                 data = await output_subscriber.get_output_message(request_id, timeout)
                 return OutputMessage(**json.loads(data.decode("utf-8")))
             except OutputMessageFetchTimeoutError as ex:
-                raise HTTPException(status_code=404, detail=str(ex))
+                raise HTTPException(status_code=404, detail=str(ex)) from ex
             except NotImplementedError as ex:
-                raise HTTPException(status_code=501, detail=str(ex))
+                raise HTTPException(status_code=501, detail=str(ex)) from ex
 
         app.add_api_route(
             RESULT_ENDPOINT,
