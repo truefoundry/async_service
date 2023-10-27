@@ -228,3 +228,6 @@ class CoreNATSOutput(Output):
             subject=f"{self._config.root_subject}.{request_id}",
             payload=serialized_output_message,
         )
+
+        # Temporary measure to bubble up connection issues in our metrics
+        await nats.flush(timeout=5)
