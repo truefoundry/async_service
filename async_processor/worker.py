@@ -2,10 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import os
+import random
 import signal
+import string
 import time
 from contextlib import AsyncExitStack
-from typing import TYPE_CHECKING, Optional, Union
+from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Union
 
 from async_processor.logger import logger
 from async_processor.prometheus_metrics import (
@@ -25,6 +27,50 @@ from async_processor.types import (
 
 if TYPE_CHECKING:
     from async_processor.processor import AsyncProcessorWrapper
+
+
+async def _retry_with_exponential_backoff(
+    coroutine: Callable,
+    kwargs: Optional[Dict] = None,
+    num_retries: int = 5,
+    # base_ms needs to be more than 1. sub-ms does not work.
+    base_ms: int = 5,
+    jitter_ms: Optional[Tuple[int, int]] = (0, 100),
+    max_wait_ms: float = 2000,
+    retry_exceptions=(Exception,),
+) -> Any:
+    retry_count = 0
+    exceptions_raised = []
+
+    kwargs = kwargs or {}
+
+    execution_name = getattr(coroutine, "__name__", "NO_NAME")
+    execution_name = (
+        f"{execution_name}-{''.join(random.choices(string.ascii_letters, k=4))}"
+    )
+
+    while retry_count <= num_retries:
+        try:
+            return await coroutine(**kwargs)
+        except retry_exceptions as ex:
+            exceptions_raised.append(ex)
+            retry_count += 1
+            sleep_ms = base_ms**retry_count
+            if jitter_ms:
+                sleep_ms += random.uniform(*jitter_ms)
+            sleep_ms = min(sleep_ms, max_wait_ms)
+
+            logger.warning(
+                "Execution=%s: exception raised: %s; Retrying after sleeping for %f ms.",
+                execution_name,
+                str(ex),
+                sleep_ms,
+            )
+            await asyncio.sleep(sleep_ms / 1000)
+        except Exception as ex:
+            raise ex
+
+    raise Exception(exceptions_raised)
 
 
 def _term_if_exception_raised(task: asyncio.Task):
@@ -87,9 +133,17 @@ async def _publish_response(
 ):
     if output:
         with collect_output_message_publish_metrics():
-            await output.publish_output_message(
-                serialized_output_message=serialized_output_message,
-                request_id=request_id,
+            await _retry_with_exponential_backoff(
+                coroutine=output.publish_output_message,
+                kwargs={
+                    "serialized_output_message": serialized_output_message,
+                    "request_id": request_id,
+                },
+                base_ms=10,
+                retry_exceptions=(Exception,),
+                num_retries=4,
+                max_wait_ms=2000,
+                jitter_ms=(0, 100),
             )
     else:
         logger.debug("Skipping publishing response as output config is not present")
