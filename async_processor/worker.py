@@ -67,8 +67,6 @@ async def _retry_with_exponential_backoff(
                 sleep_ms,
             )
             await asyncio.sleep(sleep_ms / 1000)
-        except Exception as ex:
-            raise ex
 
     raise Exception(exceptions_raised)
 
