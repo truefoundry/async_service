@@ -30,20 +30,20 @@ if TYPE_CHECKING:
     from async_processor.processor import AsyncProcessorWrapper
 
 
-async def _try_with_exponential_backoff(
+async def _retry_with_exponential_backoff(
     coroutine: Callable,
     args: Tuple = None,
     kwargs: Optional[Dict] = None,
     # The coroutine will always be awaited at least once.
-    # regardless of num_tries.
-    num_tries: int = 2,
+    # regardless of num_retries.
+    num_retries: int = 2,
     # base_ms needs to be more than 1. sub-ms does not work.
     base_ms: int = 5,
     jitter_ms: Optional[Tuple[int, int]] = (0, 100),
     max_wait_ms: float = 2000,
     retry_exceptions=(Exception,),
 ) -> Any:
-    try_count = 0
+    retry_count = 0
     exceptions_raised = []
 
     kwargs = kwargs or {}
@@ -59,37 +59,48 @@ async def _try_with_exponential_backoff(
             return await coroutine(*args, **kwargs)
         except retry_exceptions as ex:
             exceptions_raised.append(ex)
-            try_count += 1
+            retry_count += 1
 
-            if try_count > num_tries:
+            if retry_count > num_retries:
+                logger.warning(
+                    "Execution=%s: Try=%d. Exception raised: %s. Will not retry",
+                    execution_name,
+                    retry_count,
+                    str(ex),
+                )
                 break
 
-            sleep_ms = base_ms**try_count
+            sleep_ms = base_ms**retry_count
             if jitter_ms:
                 sleep_ms += random.uniform(*jitter_ms)
             sleep_ms = min(sleep_ms, max_wait_ms)
 
             logger.warning(
-                "Execution=%s: Exception raised: %s. Retrying after %f ms.",
+                "Execution=%s: Try=%d. Exception raised: %s. Retrying after %f ms.",
                 execution_name,
+                retry_count,
                 str(ex),
                 sleep_ms,
             )
             await asyncio.sleep(sleep_ms / 1000)
 
-    logger.error("Execution=%s: Failed to execute. Raising Exception")
+    logger.error(
+        "Execution=%s: Failed to execute. Tried %d times. Raising Exception",
+        execution_name,
+        num_retries + 1,
+    )
     raise Exception(exceptions_raised)
 
 
-def _async_try_with_exponential_backoff(
-    num_tries: int = 2,
+def _async_retry_with_exponential_backoff(
+    num_retries: int = 2,
     # base_ms needs to be more than 1. sub-ms does not work.
     base_ms: int = 5,
     jitter_ms: Optional[Tuple[int, int]] = (0, 100),
     max_wait_ms: float = 2000,
     retry_exceptions=(Exception,),
 ):
-    assert num_tries >= 1
+    assert num_retries >= 0
     assert base_ms >= 2
     assert max_wait_ms >= base_ms
     if jitter_ms:
@@ -99,11 +110,11 @@ def _async_try_with_exponential_backoff(
     def wrapper(func):
         @wraps(func)
         async def wrapped(*args, **kwargs):
-            return await _try_with_exponential_backoff(
+            return await _retry_with_exponential_backoff(
                 coroutine=func,
                 args=args,
                 kwargs=kwargs,
-                num_tries=num_tries,
+                num_retries=num_retries,
                 base_ms=base_ms,
                 jitter_ms=jitter_ms,
                 max_wait_ms=max_wait_ms,
@@ -168,10 +179,10 @@ class WorkerManager:
         return task
 
 
-@_async_try_with_exponential_backoff(
+@_async_retry_with_exponential_backoff(
     base_ms=10,
     retry_exceptions=(Exception,),
-    num_tries=4,
+    num_retries=3,
     max_wait_ms=2000,
     jitter_ms=(0, 100),
 )
