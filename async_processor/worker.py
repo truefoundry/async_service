@@ -238,13 +238,14 @@ class _Worker:
                     received_at_epoch_ns - input_message.published_at_epoch_ns
                 )
 
-            if output and serialized_output_message and input_message:
-                await _publish_response(
-                    serialized_output_message=serialized_output_message,
-                    request_id=input_message.request_id,
-                    output=output,
-                )
-            elif not output:
+            if output:
+                if serialized_output_message and input_message:
+                    await _publish_response(
+                        serialized_output_message=serialized_output_message,
+                        request_id=input_message.request_id,
+                        output=output,
+                    )
+            else:
                 logger.debug(
                     "Skipping publishing response as output config is not present"
                 )
