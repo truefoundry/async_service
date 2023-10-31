@@ -89,13 +89,14 @@ class collect_total_message_processing_metrics:
     def __exit__(self, exc_type, exc_value, exc_tb):
         end = _perf_counter_ms()
         _MESSAGES_IN_PROCESS.dec(1)
-        if self._output_status is not None:
+
+        if exc_value is not None:
+            status = ProcessStatus.FAILED.value
+        elif self._output_status is not None:
             status = self._output_status
         else:
-            if exc_value is None:
-                status = ProcessStatus.SUCCESS.value
-            else:
-                status = ProcessStatus.FAILED.value
+            status = ProcessStatus.SUCCESS.value
+
         _MESSAGES_PROCESSED.labels(status=status).inc(1)
         message_processing_time = end - self._start
         logger.debug(
