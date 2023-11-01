@@ -116,7 +116,7 @@ class ProcessorApp:
         return Response(
             content=self._processor.output_serializer(
                 OutputMessage(
-                    request_id=body.request_id,
+                    request_id=body.get_request_id(),
                     body=output,
                     status=ProcessStatus.SUCCESS,
                 )
