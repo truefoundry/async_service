@@ -33,8 +33,7 @@ class DummyInput(Input):
     async def publish_input_message(
         self, serialized_input_message: bytes, request_id: str
     ):
-        self._config.messages.append((serialized_input_message, request_id))
-        await asyncio.sleep(0)
+        raise NotImplementedError
 
 
 class _Result(NamedTuple):

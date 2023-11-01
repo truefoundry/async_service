@@ -7,6 +7,7 @@ from async_processor.types import (
     Input,
     InputConfig,
     InputMessage,
+    InputMessageV2,
     KafkaInputConfig,
     KafkaOutputConfig,
     KafkaSASLAuth,
@@ -43,4 +44,5 @@ __all__ = [
     "KafkaSASLAuth",
     "AsyncProcessor",
     "CoreNATSOutputConfig",
+    "InputMessageV2",
 ]

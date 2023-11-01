@@ -13,7 +13,7 @@ from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
 from async_processor.logger import logger
 from async_processor.types import (
-    InputMessage,
+    InputMessageBase,
     OutputMessage,
     ProcessStatus,
     WorkerConfig,
@@ -105,7 +105,7 @@ class ProcessorApp:
     def _healthy_route_handler(self):
         return ""
 
-    def _process_route_handler(self, body: InputMessage) -> Response:
+    def _process_route_handler(self, body: InputMessageBase) -> Response:
         start = time.perf_counter()
         output = self._processor.process(body)
         time_taken_for_request = time.perf_counter() - start
