@@ -103,7 +103,8 @@ class ProcessorApp:
     async def _process_route_handler(
         self,
         request: Request,
-        # We need this ` _: dict = Body(...)` to ensure that the user can put request body in the Swagger page
+        # We need this ` _: dict = Body(...)` to
+        # ensure that the user can put request body in the Swagger page
         _: dict = Body(...),  # noqa: B008
     ) -> Response:
         start = time.perf_counter()
