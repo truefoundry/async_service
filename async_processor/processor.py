@@ -34,7 +34,7 @@ class BaseProcessor:
         input_message = orjson.loads(serialized_input_message)
         if not isinstance(input_message, dict):
             raise ValueError(
-                'Input message must be an object (Ex: `{{"a": "b"}}`). '
+                'Input message must be an object (E.g.: `{"a": "b"}`). '
                 f"Expected dict, got {type(input_message)}"
             )
 
