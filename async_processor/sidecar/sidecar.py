@@ -4,7 +4,12 @@ from typing import Optional
 import aiohttp
 from pydantic import BaseSettings, confloat
 
-from async_processor import AsyncProcessor, InputMessage, OutputMessage, ProcessStatus
+from async_processor import (
+    AsyncProcessor,
+    InputMessageInterface,
+    OutputMessage,
+    ProcessStatus,
+)
 from async_processor.logger import logger
 
 
@@ -16,7 +21,7 @@ class Settings(BaseSettings):
         env_prefix = "TFY_ASYNC_PROCESSOR_SIDECAR_"
 
 
-settings = Settings()
+settings = Settings()  # type: ignore
 
 
 class SidecarProcessor(AsyncProcessor):
@@ -41,18 +46,20 @@ class SidecarProcessor(AsyncProcessor):
                 )
                 await asyncio.sleep(1.0)
 
-    async def process(self, input_message: InputMessage) -> OutputMessage:
+    async def process(self, input_message: InputMessageInterface) -> OutputMessage:
         async with self._client_session.post(
             settings.destination_url,
-            json=input_message.body,
+            json=input_message.get_body(),
             timeout=settings.request_timeout,
         ) as response:
+            status = ProcessStatus.SUCCESS if response.ok else ProcessStatus.FAILED
             return OutputMessage(
-                request_id=input_message.request_id,
-                status=ProcessStatus.SUCCESS if response.ok else ProcessStatus.FAILED,
+                request_id=input_message.get_request_id(),
+                status=status,
                 body=await response.text(),
-                status_code=response.status,
+                status_code=str(response.status),
                 content_type=response.headers["content-type"],
+                input_message=input_message if status is ProcessStatus.FAILED else None,
             )
 
 

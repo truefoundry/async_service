@@ -4,10 +4,17 @@ from typing import Any, Callable, Optional, TypeVar, Union
 
 import orjson
 from fastapi import FastAPI
+from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from async_processor.app import ProcessorApp
-from async_processor.types import InputMessage, OutputMessage, WorkerConfig
+from async_processor.types import (
+    InputMessage,
+    InputMessageInterface,
+    InputMessageV2,
+    OutputMessage,
+    WorkerConfig,
+)
 
 Result = TypeVar("Result")
 
@@ -23,8 +30,18 @@ async def _async_run(
 class BaseProcessor:
     def input_deserializer(
         self, serialized_input_message: Union[str, bytes]
-    ) -> InputMessage:
-        return InputMessage(**orjson.loads(serialized_input_message))
+    ) -> InputMessageInterface:
+        input_message = orjson.loads(serialized_input_message)
+        if not isinstance(input_message, dict):
+            raise ValueError(
+                'Input message must be an object (E.g.: `{"a": "b"}`). '
+                f"Expected dict, got {type(input_message)}"
+            )
+
+        try:
+            return InputMessage(**input_message)
+        except ValidationError:
+            return InputMessageV2(**input_message)
 
     def output_serializer(self, output_message: OutputMessage) -> bytes:
         return orjson.dumps(output_message.dict(), option=orjson.OPT_SERIALIZE_NUMPY)
@@ -37,7 +54,7 @@ class Processor(abc.ABC, BaseProcessor):
         return
 
     @abc.abstractmethod
-    def process(self, input_message: InputMessage) -> Any:
+    def process(self, input_message: InputMessageInterface) -> Any:
         ...
 
     def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
@@ -54,7 +71,7 @@ class AsyncProcessor(abc.ABC, BaseProcessor):
         return
 
     @abc.abstractmethod
-    async def process(self, input_message: InputMessage) -> Any:
+    async def process(self, input_message: InputMessageInterface) -> Any:
         ...
 
     def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
@@ -70,7 +87,7 @@ class AsyncProcessorWrapper:
 
     def input_deserializer(
         self, serialized_input_message: Union[str, bytes]
-    ) -> InputMessage:
+    ) -> InputMessageInterface:
         return self._processor.input_deserializer(
             serialized_input_message=serialized_input_message
         )
@@ -81,5 +98,5 @@ class AsyncProcessorWrapper:
     async def init(self):
         return await _async_run(self._processor.init)
 
-    async def process(self, input_message: InputMessage) -> Any:
+    async def process(self, input_message: InputMessageInterface) -> Any:
         return await _async_run(self._processor.process, input_message=input_message)

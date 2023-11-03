@@ -7,17 +7,12 @@ from contextlib import asynccontextmanager
 from typing import TYPE_CHECKING, Any, Optional
 
 import orjson
-from fastapi import FastAPI
+from fastapi import Body, FastAPI, Request
 from fastapi.responses import Response
 from prometheus_client import CollectorRegistry, make_asgi_app, multiprocess
 
 from async_processor.logger import logger
-from async_processor.types import (
-    InputMessage,
-    OutputMessage,
-    ProcessStatus,
-    WorkerConfig,
-)
+from async_processor.types import OutputMessage, ProcessStatus, WorkerConfig
 from async_processor.worker import WorkerManager
 
 if TYPE_CHECKING:
@@ -105,9 +100,17 @@ class ProcessorApp:
     def _healthy_route_handler(self):
         return ""
 
-    def _process_route_handler(self, body: InputMessage) -> Response:
+    async def _process_route_handler(
+        self,
+        request: Request,
+        # We need this ` _: dict = Body(...)` to
+        # ensure that the user can put request body in the Swagger page
+        _: dict = Body(...),  # noqa: B008
+    ) -> Response:
         start = time.perf_counter()
-        output = self._processor.process(body)
+        payload = await request.body()
+        input_message = self._processor.input_deserializer(payload)
+        output = await self._processor.process(input_message)
         time_taken_for_request = time.perf_counter() - start
         logger.debug(
             "Time taken to process request: %f seconds", time_taken_for_request
@@ -116,7 +119,7 @@ class ProcessorApp:
         return Response(
             content=self._processor.output_serializer(
                 OutputMessage(
-                    request_id=body.request_id,
+                    request_id=input_message.get_request_id(),
                     body=output,
                     status=ProcessStatus.SUCCESS,
                 )

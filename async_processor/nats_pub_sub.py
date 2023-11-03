@@ -221,11 +221,13 @@ class CoreNATSOutput(Output):
         return self._nc
 
     async def publish_output_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_output_message: bytes, request_id: Optional[str]
     ):
         nats = await self._get_nats_client()
         await nats.publish(
-            subject=f"{self._config.root_subject}.{request_id}",
+            subject=f"{self._config.root_subject}.{request_id}"
+            if request_id
+            else self._config.root_subject,
             payload=serialized_output_message,
         )
 

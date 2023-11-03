@@ -19,7 +19,7 @@ from async_processor.prometheus_metrics import (
 )
 from async_processor.types import (
     Input,
-    InputMessage,
+    InputMessageInterface,
     Output,
     OutputMessage,
     ProcessStatus,
@@ -188,8 +188,8 @@ class WorkerManager:
 )
 async def _publish_response(
     serialized_output_message: bytes,
-    request_id: str,
-    output: Optional[Output],
+    request_id: Optional[str],
+    output: Output,
 ):
     with collect_output_message_publish_metrics():
         await output.publish_output_message(
@@ -210,7 +210,7 @@ class _Worker:
         output: Optional[Output],
     ):
         serialized_output_message: Optional[bytes] = None
-        input_message: Optional[InputMessage] = None
+        input_message: Optional[InputMessageInterface] = None
         exception: Optional[Exception] = None
         with collect_total_message_processing_metrics() as collector:
             try:
@@ -223,7 +223,7 @@ class _Worker:
                 else:
                     output_message = OutputMessage(
                         status=ProcessStatus.SUCCESS,
-                        request_id=input_message.request_id,
+                        request_id=input_message.get_request_id(),
                         body=result,
                     )
                 serialized_output_message = self._processor.output_serializer(
@@ -234,8 +234,9 @@ class _Worker:
                 if input_message:
                     output_message = OutputMessage(
                         status=ProcessStatus.FAILED,
-                        request_id=input_message.request_id,
+                        request_id=input_message.get_request_id(),
                         error=str(ex),
+                        input_message=input_message,
                     )
                     serialized_output_message = self._processor.output_serializer(
                         output_message
@@ -244,16 +245,16 @@ class _Worker:
             else:
                 collector.set_output_status(output_message.status)
 
-            if input_message and input_message.published_at_epoch_ns:
+            if input_message and input_message.get_published_at_epoch_ns():
                 MESSAGE_INPUT_LATENCY.set(
-                    received_at_epoch_ns - input_message.published_at_epoch_ns
+                    received_at_epoch_ns - input_message.get_published_at_epoch_ns()
                 )
 
             if output:
                 if serialized_output_message and input_message:
                     await _publish_response(
                         serialized_output_message=serialized_output_message,
-                        request_id=input_message.request_id,
+                        request_id=input_message.get_request_id(),
                         output=output,
                     )
             else:

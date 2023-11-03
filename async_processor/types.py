@@ -1,9 +1,9 @@
 import abc
 import enum
 from contextlib import asynccontextmanager
-from typing import Any, AsyncIterator, List, Optional, Union
+from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
-from pydantic import BaseModel, confloat, conint, constr
+from pydantic import BaseModel, Extra, confloat, conint, constr
 
 
 @enum.unique
@@ -12,17 +12,69 @@ class ProcessStatus(str, enum.Enum):
     SUCCESS = "SUCCESS"
 
 
-class InputMessage(BaseModel):
+class InputMessageInterface(abc.ABC, BaseModel):
+    @abc.abstractmethod
+    def get_request_id(self) -> Optional[str]:
+        ...
+
+    @abc.abstractmethod
+    def get_published_at_epoch_ns(self) -> Optional[int]:
+        ...
+
+    @abc.abstractmethod
+    def get_body(self) -> Any:
+        ...
+
+
+class InputMessage(InputMessageInterface):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: Any
     published_at_epoch_ns: Optional[int] = None
 
+    class Config:
+        extra = Extra.forbid
+
+    def get_request_id(self) -> Optional[str]:
+        return self.request_id
+
+    def get_published_at_epoch_ns(self) -> Optional[int]:
+        return self.published_at_epoch_ns
+
+    def get_body(self) -> Any:
+        return self.body
+
+
+# We cannot maintain two different types and should remove `InputMessage`
+# after sometime
+class InputMessageV2(InputMessageInterface):
+    tfy_request_id: Optional[constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")] = None
+    tfy_published_at_epoch_ns: Optional[int] = None
+
+    class Config:
+        extra = Extra.allow
+
+    def get_request_id(self) -> Optional[str]:
+        return self.tfy_request_id
+
+    def get_published_at_epoch_ns(self) -> Optional[int]:
+        return self.tfy_published_at_epoch_ns
+
+    def get_body(self) -> Dict:
+        body = self.dict()
+
+        for field in self.__fields__:
+            if field in body and body[field] is None:
+                del body[field]
+
+        return body
+
 
 class OutputMessage(BaseModel):
-    request_id: str
+    request_id: Optional[str]
     status: ProcessStatus
     body: Optional[Any] = None
     error: Optional[str] = None
+    input_message: Optional[Union[InputMessage, InputMessageV2]] = None
 
     # these are experimental fields
     status_code: Optional[str] = None
@@ -147,7 +199,7 @@ class Output(abc.ABC):
 
     @abc.abstractmethod
     async def publish_output_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_output_message: bytes, request_id: Optional[str]
     ):
         ...
 

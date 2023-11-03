@@ -81,7 +81,7 @@ class SQSOutput(Output):
         )
 
     async def publish_output_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_output_message: bytes, request_id: Optional[str]
     ):
         await run_in_threadpool(
             self._sqs.send_message,

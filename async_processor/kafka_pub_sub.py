@@ -119,7 +119,7 @@ class KafkaOutput(Output):
         )
 
     async def publish_output_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_output_message: bytes, request_id: Optional[str]
     ):
         future = self._producer.send(
             topic=self._topic_name, value=serialized_output_message
