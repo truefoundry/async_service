@@ -10,7 +10,7 @@ from starlette.concurrency import run_in_threadpool
 from async_processor.app import ProcessorApp
 from async_processor.types import (
     InputMessage,
-    InputMessageBase,
+    InputMessageInterface,
     InputMessageV2,
     OutputMessage,
     WorkerConfig,
@@ -30,7 +30,7 @@ async def _async_run(
 class BaseProcessor:
     def input_deserializer(
         self, serialized_input_message: Union[str, bytes]
-    ) -> InputMessageBase:
+    ) -> InputMessageInterface:
         input_message = orjson.loads(serialized_input_message)
         if not isinstance(input_message, dict):
             raise ValueError(
@@ -54,7 +54,7 @@ class Processor(abc.ABC, BaseProcessor):
         return
 
     @abc.abstractmethod
-    def process(self, input_message: InputMessageBase) -> Any:
+    def process(self, input_message: InputMessageInterface) -> Any:
         ...
 
     def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
@@ -71,7 +71,7 @@ class AsyncProcessor(abc.ABC, BaseProcessor):
         return
 
     @abc.abstractmethod
-    async def process(self, input_message: InputMessageBase) -> Any:
+    async def process(self, input_message: InputMessageInterface) -> Any:
         ...
 
     def build_app(self, worker_config: Optional[WorkerConfig] = None) -> FastAPI:
@@ -87,7 +87,7 @@ class AsyncProcessorWrapper:
 
     def input_deserializer(
         self, serialized_input_message: Union[str, bytes]
-    ) -> InputMessageBase:
+    ) -> InputMessageInterface:
         return self._processor.input_deserializer(
             serialized_input_message=serialized_input_message
         )
@@ -98,5 +98,5 @@ class AsyncProcessorWrapper:
     async def init(self):
         return await _async_run(self._processor.init)
 
-    async def process(self, input_message: InputMessageBase) -> Any:
+    async def process(self, input_message: InputMessageInterface) -> Any:
         return await _async_run(self._processor.process, input_message=input_message)

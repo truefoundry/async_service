@@ -6,7 +6,7 @@ from pydantic import BaseSettings, confloat
 
 from async_processor import (
     AsyncProcessor,
-    InputMessageBase,
+    InputMessageInterface,
     OutputMessage,
     ProcessStatus,
 )
@@ -46,7 +46,7 @@ class SidecarProcessor(AsyncProcessor):
                 )
                 await asyncio.sleep(1.0)
 
-    async def process(self, input_message: InputMessageBase) -> OutputMessage:
+    async def process(self, input_message: InputMessageInterface) -> OutputMessage:
         async with self._client_session.post(
             settings.destination_url,
             json=input_message.get_body(),

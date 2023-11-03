@@ -19,7 +19,7 @@ from async_processor.prometheus_metrics import (
 )
 from async_processor.types import (
     Input,
-    InputMessageBase,
+    InputMessageInterface,
     Output,
     OutputMessage,
     ProcessStatus,
@@ -210,7 +210,7 @@ class _Worker:
         output: Optional[Output],
     ):
         serialized_output_message: Optional[bytes] = None
-        input_message: Optional[InputMessageBase] = None
+        input_message: Optional[InputMessageInterface] = None
         exception: Optional[Exception] = None
         with collect_total_message_processing_metrics() as collector:
             try:

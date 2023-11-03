@@ -12,7 +12,7 @@ class ProcessStatus(str, enum.Enum):
     SUCCESS = "SUCCESS"
 
 
-class InputMessageBase(abc.ABC, BaseModel):
+class InputMessageInterface(abc.ABC, BaseModel):
     @abc.abstractmethod
     def get_request_id(self) -> Optional[str]:
         ...
@@ -26,7 +26,7 @@ class InputMessageBase(abc.ABC, BaseModel):
         ...
 
 
-class InputMessage(InputMessageBase):
+class InputMessage(InputMessageInterface):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: Any
     published_at_epoch_ns: Optional[int] = None
@@ -46,7 +46,7 @@ class InputMessage(InputMessageBase):
 
 # We cannot maintain two different types and should remove `InputMessage`
 # after sometime
-class InputMessageV2(InputMessageBase):
+class InputMessageV2(InputMessageInterface):
     tfy_request_id: Optional[constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")] = None
     tfy_published_at_epoch_ns: Optional[int] = None
 
