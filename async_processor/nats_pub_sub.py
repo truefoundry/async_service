@@ -55,6 +55,7 @@ class NATSInput(Input):
             max_outstanding_pings=2,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
+            max_reconnect_attempts=-1,
             **auth,
         )
         return self._nc
@@ -154,6 +155,7 @@ class NATSOutput(Output):
             max_outstanding_pings=2,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
+            max_reconnect_attempts=-1,
             **auth,
         )
         self._js = self._nc.jetstream(timeout=10)
@@ -216,6 +218,7 @@ class CoreNATSOutput(Output):
             max_outstanding_pings=2,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
+            max_reconnect_attempts=-1,
             **auth,
         )
         return self._nc
