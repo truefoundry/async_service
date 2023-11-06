@@ -21,6 +21,8 @@ class InputMessageInterface(abc.ABC, BaseModel):
     def get_published_at_epoch_ns(self) -> Optional[int]:
         ...
 
+    # TODO: this method is only here for sidecar
+    # move this logic to sidecar module
     @abc.abstractmethod
     def get_body(self) -> Any:
         ...
@@ -40,6 +42,8 @@ class InputMessage(InputMessageInterface):
     def get_published_at_epoch_ns(self) -> Optional[int]:
         return self.published_at_epoch_ns
 
+    # TODO: this method is only here for sidecar
+    # move this logic to sidecar module
     def get_body(self) -> Any:
         return self.body
 
@@ -59,11 +63,13 @@ class InputMessageV2(InputMessageInterface):
     def get_published_at_epoch_ns(self) -> Optional[int]:
         return self.tfy_published_at_epoch_ns
 
+    # TODO: this method is only here for sidecar
+    # move this logic to sidecar module
     def get_body(self) -> Dict:
         body = self.dict()
 
         for field in self.__fields__:
-            if field in body and body[field] is None:
+            if field in body:
                 del body[field]
 
         return body
