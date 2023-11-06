@@ -20,6 +20,10 @@ from async_processor.types import (
     OutputMessageFetchTimeoutError,
 )
 
+_MAX_RECONNECT_ATTEMPTS = -1
+_MAX_OUTSTANDING_PINGS = 5
+_PING_INTERVAL = 6
+
 
 def _get_work_queue_subject_pattern(root_subject: str):
     return f"{root_subject}.>"
@@ -51,11 +55,11 @@ class NATSInput(Input):
         auth = self._config.auth.dict() if self._config.auth else {}
         self._nc = await connect(
             self._config.nats_url,
-            ping_interval=30,
-            max_outstanding_pings=2,
+            ping_interval=_PING_INTERVAL,
+            max_outstanding_pings=_MAX_OUTSTANDING_PINGS,
+            max_reconnect_attempts=_MAX_RECONNECT_ATTEMPTS,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
-            max_reconnect_attempts=-1,
             **auth,
         )
         return self._nc
@@ -151,11 +155,11 @@ class NATSOutput(Output):
         auth = self._config.auth.dict() if self._config.auth else {}
         self._nc = await connect(
             self._config.nats_url,
-            ping_interval=30,
-            max_outstanding_pings=2,
+            ping_interval=_PING_INTERVAL,
+            max_outstanding_pings=_MAX_OUTSTANDING_PINGS,
+            max_reconnect_attempts=_MAX_RECONNECT_ATTEMPTS,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
-            max_reconnect_attempts=-1,
             **auth,
         )
         self._js = self._nc.jetstream(timeout=10)
@@ -214,11 +218,11 @@ class CoreNATSOutput(Output):
         auth = self._config.auth.dict() if self._config.auth else {}
         self._nc = await connect(
             self._config.nats_url,
-            ping_interval=30,
-            max_outstanding_pings=2,
+            ping_interval=_PING_INTERVAL,
+            max_outstanding_pings=_MAX_OUTSTANDING_PINGS,
+            max_reconnect_attempts=_MAX_RECONNECT_ATTEMPTS,
             reconnected_cb=partial(_log_nats_connection_event, event="reconnected"),
             disconnected_cb=partial(_log_nats_connection_event, event="disconnected"),
-            max_reconnect_attempts=-1,
             **auth,
         )
         return self._nc
