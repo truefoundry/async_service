@@ -1,8 +1,10 @@
+import signal
 from contextlib import asynccontextmanager
 from functools import partial
 from typing import AsyncIterator, Optional
 
 from nats import NATS, connect
+from nats.errors import OutboundBufferLimitError
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig
@@ -231,12 +233,20 @@ class CoreNATSOutput(Output):
         self, serialized_output_message: bytes, request_id: Optional[str]
     ):
         nats = await self._get_nats_client()
-        await nats.publish(
-            subject=f"{self._config.root_subject}.{request_id}"
-            if request_id
-            else self._config.root_subject,
-            payload=serialized_output_message,
-        )
+        try:
+            await nats.publish(
+                subject=f"{self._config.root_subject}.{request_id}"
+                if request_id
+                else self._config.root_subject,
+                payload=serialized_output_message,
+            )
+        except OutboundBufferLimitError as ex:
+            # This can only happen if the nats connection is not in connected state for sometime
+            # By default this buffer size is 2MB.
+            # In case, the buffer gets full, we signal the process to terminate itself
+            logger.exception("Fatal exception: OutboundBufferLimitError")
+            signal.raise_signal(signal.SIGTERM)
+            raise ex
 
         # Temporary measure to bubble up connection issues in our metrics
         await nats.flush(timeout=5)
