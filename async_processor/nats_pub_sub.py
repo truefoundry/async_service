@@ -4,7 +4,7 @@ from functools import partial
 from typing import AsyncIterator, Optional
 
 from nats import NATS, connect
-from nats.errors import OutboundBufferLimitError
+from nats.errors import FlushTimeoutError, OutboundBufferLimitError
 from nats.errors import TimeoutError as NatsTimeoutError
 from nats.js import JetStreamContext
 from nats.js.api import AckPolicy, ConsumerConfig
@@ -200,10 +200,15 @@ class NATSOutput(Output):
         return msg.data
 
 
+# We also have retries which will increment the counter
+_MAX_CONSECUTIVE_FLUSH_TIMEOUT_COUNTS = 25
+
+
 class CoreNATSOutput(Output):
     def __init__(self, config: CoreNATSOutputConfig):
         self._config = config
         self._nc = None
+        self._consecutive_flush_timeout_counts = 0
 
     async def __aexit__(self, exc_type, exc_value, traceback):
         if not self._nc:
@@ -249,4 +254,27 @@ class CoreNATSOutput(Output):
             raise ex
 
         # Temporary measure to bubble up connection issues in our metrics
-        await nats.flush(timeout=5)
+        try:
+            await nats.flush(timeout=5)
+        except FlushTimeoutError as ex:
+            # In some cases, we notice that the >20% of the pods request starts
+            # failing due to FlushTimeoutError. At the same time range, the other pods under the
+            # same Deployment works without any issue.
+            # Looking at nats connect and reconnect logs,
+            # our hypothesis is that for whatever reason, the connection goes to a bad state.
+            # In this case, we are tracking consecutive_flush_timeout and signal the process to terminate
+            # if that count is above 25
+            # After this, we mostly do not need sigterm for OutboundBufferLimitError
+            self._consecutive_flush_timeout_counts += 1
+            if (
+                self._consecutive_flush_timeout_counts
+                > _MAX_CONSECUTIVE_FLUSH_TIMEOUT_COUNTS
+            ):
+                logger.exception(
+                    "Fatal exception: consecutive %d times FlushTimeoutError.",
+                    self._consecutive_flush_timeout_counts,
+                )
+                signal.raise_signal(signal.SIGTERM)
+            raise ex
+        else:
+            self._consecutive_flush_timeout_counts = 0
