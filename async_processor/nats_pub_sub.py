@@ -240,12 +240,13 @@ class CoreNATSOutput(Output):
                 else self._config.root_subject,
                 payload=serialized_output_message,
             )
-        except OutboundBufferLimitError:
+        except OutboundBufferLimitError as ex:
             # This can only happen if the nats connection is not in connected state for sometime
             # By default this buffer size is 2MB.
             # In case, the buffer gets full, we signal the process to terminate itself
             logger.exception("Fatal exception: OutboundBufferLimitError")
             signal.raise_signal(signal.SIGTERM)
+            raise ex
 
         # Temporary measure to bubble up connection issues in our metrics
         await nats.flush(timeout=5)
