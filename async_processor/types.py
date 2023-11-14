@@ -3,7 +3,7 @@ import enum
 from contextlib import asynccontextmanager
 from typing import Any, AsyncIterator, Dict, List, Optional, Union
 
-from pydantic import BaseModel, Extra, confloat, conint, constr
+from async_processor.pydantic_v1 import BaseModel, Extra, confloat, conint, constr
 
 
 @enum.unique

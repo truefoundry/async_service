@@ -4,10 +4,10 @@ from typing import Any, Callable, Optional, TypeVar, Union
 
 import orjson
 from fastapi import FastAPI
-from pydantic import ValidationError
 from starlette.concurrency import run_in_threadpool
 
 from async_processor.app import ProcessorApp
+from async_processor.pydantic_v1 import ValidationError
 from async_processor.types import (
     InputMessage,
     InputMessageInterface,
