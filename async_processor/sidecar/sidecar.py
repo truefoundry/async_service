@@ -2,7 +2,6 @@ import asyncio
 from typing import Optional
 
 import aiohttp
-from pydantic import BaseSettings, confloat
 
 from async_processor import (
     AsyncProcessor,
@@ -11,6 +10,7 @@ from async_processor import (
     ProcessStatus,
 )
 from async_processor.logger import logger
+from async_processor.pydantic_v1 import BaseSettings, confloat
 
 
 class Settings(BaseSettings):

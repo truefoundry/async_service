@@ -1,11 +1,11 @@
 from typing import List
 
-from pydantic import BaseModel, Field
 from typing_extensions import Annotated
 
 from async_processor.function_service.utils import (
     create_pydantic_model_from_function_signature,
 )
+from async_processor.pydantic_v1 import BaseModel, Field
 
 # def dummy_function(a: Annotated[int, ], b: str, c: bool = True, d: List[str] = []) -> None:
 #    pass

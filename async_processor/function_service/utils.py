@@ -4,9 +4,7 @@ import re
 import uuid
 from typing import Any, Callable, Dict
 
-import pydantic
-from pydantic import BaseModel
-
+from async_processor.pydantic_v1 import BaseModel, create_model
 from async_processor.types import Input, InputMessage
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
@@ -53,11 +51,11 @@ def create_pydantic_model_from_function_signature(func, model_name: str):
     # Allow extra params if there is a **kwargs parameter in the function signature
     config = Config if varkw else None
 
-    return pydantic.create_model(
+    return create_model(
         model_name,
         **params,
         **keyword_only_params,
-        __base__=pydantic.BaseModel,
+        __base__=BaseModel,
         __config__=config,
     )
 
