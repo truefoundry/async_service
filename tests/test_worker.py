@@ -138,10 +138,50 @@ async def _test_input_message_in_output_message_if_processing_fails():
         )
 
 
+async def _test_processor_runner_with_generator():
+    class DummyProcessor(Processor):
+        def process(self, input_message: InputMessage):
+            for _ in range(2):
+                yield input_message
+
+    class AsyncDummyProcessor(AsyncProcessor):
+        async def process(self, input_message: InputMessage):
+            for _ in range(2):
+                await asyncio.sleep(0)
+                yield input_message
+
+    for P in (DummyProcessor, AsyncDummyProcessor):
+        messages = [
+            InputMessage(request_id=str(uuid.uuid4()), body="1"),
+            InputMessage(request_id=uuid.uuid4().hex, body="2"),
+            InputMessage(request_id="3", body="3"),
+        ]
+        input_config = DummyInputConfig(messages=messages)
+        output_config = DummyOutputConfig(results=[])
+
+        stop_event = asyncio.Event()
+        worker_manager = WorkerManager(
+            processor=AsyncProcessorWrapper(P()),
+            worker_config=WorkerConfig(
+                input_config=input_config,
+                output_config=output_config,
+                num_concurrent_workers=2,
+            ),
+            stop_event=stop_event,
+        )
+        await _run_worker_manager(worker_manager, stop_event)
+
+        assert len(messages) > 2
+        assert len(messages) * 2 == len(output_config.results), len(
+            output_config.results
+        )
+
+
 async def _test_processor_runner():
     await _test_processor_runner_no_output_config()
     await _test_processor_runner_with_output_config()
     await _test_input_message_in_output_message_if_processing_fails()
+    await _test_processor_runner_with_generator()
 
 
 def test_processor_runner():

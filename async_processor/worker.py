@@ -6,9 +6,20 @@ import random
 import signal
 import string
 import time
+import warnings
 from contextlib import AsyncExitStack
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Dict, Optional, Tuple, Union
+from types import AsyncGeneratorType, GeneratorType
+from typing import (
+    TYPE_CHECKING,
+    Any,
+    AsyncIterator,
+    Callable,
+    Dict,
+    Optional,
+    Tuple,
+    Union,
+)
 
 from async_processor.logger import logger
 from async_processor.prometheus_metrics import (
@@ -32,7 +43,7 @@ if TYPE_CHECKING:
 
 async def _retry_with_exponential_backoff(
     coroutine: Callable,
-    args: Tuple = None,
+    args: Optional[Tuple] = None,
     kwargs: Optional[Dict] = None,
     # The coroutine will always be awaited at least once.
     # regardless of num_retries.
@@ -198,10 +209,118 @@ async def _publish_response(
         )
 
 
+async def _iter_and_warn(maybe_generaotr):
+    if isinstance(maybe_generaotr, AsyncGeneratorType):
+        warnings.warn(
+            "Returning an AsyncGenerator from the AsyncProcessor.process method "
+            "is an experimental feature, and behaviours may change later.",
+            UserWarning,
+            stacklevel=1,
+        )
+        async for obj in maybe_generaotr:
+            yield obj
+        return
+    if isinstance(maybe_generaotr, GeneratorType):
+        warnings.warn(
+            "Returning an Generator from the Processor.process method "
+            "is an experimental feature, and behaviours may change later.",
+            UserWarning,
+            stacklevel=1,
+        )
+        for obj in maybe_generaotr:
+            yield obj
+        return
+    yield maybe_generaotr
+
+
+def _prepare_failure_message_due_to_exception(
+    input_message: InputMessageInterface, exception: Exception
+) -> OutputMessage:
+    return OutputMessage(
+        status=ProcessStatus.FAILED,
+        request_id=input_message.get_request_id(),
+        error=str(exception),
+        input_message=input_message,
+    )
+
+
 class _Worker:
     def __init__(self, worker_config: WorkerConfig, processor: AsyncProcessorWrapper):
         self._worker_config = worker_config
         self._processor = processor
+
+    async def _process(
+        self,
+        serialized_input_message: Union[str, bytes],
+        received_at_epoch_ns: int,
+    ) -> AsyncIterator[Tuple[InputMessageInterface, OutputMessage]]:
+        input_message = self._processor.input_deserializer(serialized_input_message)
+
+        published_at_epoch_ns = input_message.get_published_at_epoch_ns()
+        if published_at_epoch_ns:
+            MESSAGE_INPUT_LATENCY.set(received_at_epoch_ns - published_at_epoch_ns)
+
+        try:
+            responses = await self._processor.process(input_message=input_message)
+        except Exception as ex:
+            logger.exception(
+                "Failed to process message request_id=%s",
+                input_message.get_request_id(),
+            )
+            yield input_message, _prepare_failure_message_due_to_exception(
+                input_message=input_message, exception=ex
+            )
+            return
+
+        responses = _iter_and_warn(responses)
+
+        while True:
+            try:
+                resp = await responses.__anext__()
+            except StopAsyncIteration:
+                return
+            except Exception as ex:
+                logger.exception(
+                    "Failed to process message request_id=%s",
+                    input_message.get_request_id(),
+                )
+                yield input_message, _prepare_failure_message_due_to_exception(
+                    input_message=input_message, exception=ex
+                )
+                return
+
+            if isinstance(resp, OutputMessage):
+                yield input_message, resp
+                if resp.status is ProcessStatus.FAILED:
+                    return
+            else:
+                yield input_message, OutputMessage(
+                    status=ProcessStatus.SUCCESS,
+                    request_id=input_message.get_request_id(),
+                    body=resp,
+                )
+
+    async def _serialize_output_message(
+        self, messages: AsyncIterator[Tuple[InputMessageInterface, OutputMessage]]
+    ) -> AsyncIterator[Tuple[InputMessageInterface, OutputMessage, bytes]]:
+        async for input_message, output_message in messages:
+            serialized_output_message = self._processor.output_serializer(
+                output_message
+            )
+            yield input_message, output_message, serialized_output_message
+
+    async def _publish_output_message(
+        self,
+        messages: AsyncIterator[Tuple[InputMessageInterface, OutputMessage, bytes]],
+        output: Output,
+    ) -> AsyncIterator[Tuple[InputMessageInterface, OutputMessage]]:
+        async for input_message, output_message, serialized_output_message in messages:
+            await _publish_response(
+                serialized_output_message=serialized_output_message,
+                request_id=input_message.get_request_id(),
+                output=output,
+            )
+            yield input_message, output_message
 
     async def _handle_msg(
         self,
@@ -209,61 +328,23 @@ class _Worker:
         received_at_epoch_ns: int,
         output: Optional[Output],
     ):
-        serialized_output_message: Optional[bytes] = None
-        input_message: Optional[InputMessageInterface] = None
-        exception: Optional[Exception] = None
         with collect_total_message_processing_metrics() as collector:
-            try:
-                input_message = self._processor.input_deserializer(
-                    serialized_input_message
-                )
-                result = await self._processor.process(input_message=input_message)
-                if isinstance(result, OutputMessage):
-                    output_message = result
-                else:
-                    output_message = OutputMessage(
-                        status=ProcessStatus.SUCCESS,
-                        request_id=input_message.get_request_id(),
-                        body=result,
-                    )
-                serialized_output_message = self._processor.output_serializer(
-                    output_message
-                )
-            except Exception as ex:
-                logger.exception("error raised while handling message")
-                if input_message:
-                    output_message = OutputMessage(
-                        status=ProcessStatus.FAILED,
-                        request_id=input_message.get_request_id(),
-                        error=str(ex),
-                        input_message=input_message,
-                    )
-                    serialized_output_message = self._processor.output_serializer(
-                        output_message
-                    )
-                exception = ex
-            else:
-                collector.set_output_status(output_message.status)
-
-            if input_message and input_message.get_published_at_epoch_ns():
-                MESSAGE_INPUT_LATENCY.set(
-                    received_at_epoch_ns - input_message.get_published_at_epoch_ns()
-                )
-
+            pipeline = self._process(
+                serialized_input_message=serialized_input_message,
+                received_at_epoch_ns=received_at_epoch_ns,
+            )
+            pipeline = self._serialize_output_message(messages=pipeline)
             if output:
-                if serialized_output_message and input_message:
-                    await _publish_response(
-                        serialized_output_message=serialized_output_message,
-                        request_id=input_message.get_request_id(),
-                        output=output,
-                    )
+                pipeline = self._publish_output_message(
+                    messages=pipeline, output=output
+                )
             else:
                 logger.debug(
                     "Skipping publishing response as output config is not present"
                 )
 
-            if exception:
-                raise exception
+            async for _, output_message, *_ in pipeline:
+                collector.set_output_status(output_message.status)
 
     async def _process_single_step(self, input_: Input, output: Optional[Output]):
         with collect_input_message_fetch_metrics():
