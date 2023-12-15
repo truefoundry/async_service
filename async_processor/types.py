@@ -9,6 +9,9 @@ from async_processor.pydantic_v1 import BaseModel, Extra, confloat, conint, cons
 @enum.unique
 class ProcessStatus(str, enum.Enum):
     FAILED = "FAILED"
+
+    # If the user is returning a generator from process method, SUCCESS is no longer a terminal status.
+    # we may have to re-think this.
     SUCCESS = "SUCCESS"
 
 
@@ -27,11 +30,16 @@ class InputMessageInterface(abc.ABC, BaseModel):
     def get_body(self) -> Any:
         ...
 
+    @abc.abstractmethod
+    def should_stream_response(self) -> bool:
+        ...
+
 
 class InputMessage(InputMessageInterface):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: Any
     published_at_epoch_ns: Optional[int] = None
+    stream_response: bool = False
 
     class Config:
         extra = Extra.forbid
@@ -47,12 +55,16 @@ class InputMessage(InputMessageInterface):
     def get_body(self) -> Any:
         return self.body
 
+    def should_stream_response(self) -> bool:
+        return self.stream_response
+
 
 # We cannot maintain two different types and should remove `InputMessage`
 # after sometime
 class InputMessageV2(InputMessageInterface):
     tfy_request_id: Optional[constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")] = None
     tfy_published_at_epoch_ns: Optional[int] = None
+    tfy_stream_response: bool = False
 
     class Config:
         extra = Extra.allow
@@ -73,6 +85,9 @@ class InputMessageV2(InputMessageInterface):
                 del body[field]
 
         return body
+
+    def should_stream_response(self) -> bool:
+        return self.tfy_stream_response
 
 
 class OutputMessage(BaseModel):
