@@ -227,7 +227,7 @@ async def _iter_and_warn(maybe_generator) -> AsyncIterator:
             UserWarning,
             stacklevel=1,
         )
-        # NOTE: this will block the eventloop. Move it to a different thread.
+        # NOTE: this may block the eventloop. Check it once.
         for obj in maybe_generator:
             yield obj
         return
