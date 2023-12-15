@@ -209,28 +209,29 @@ async def _publish_response(
         )
 
 
-async def _iter_and_warn(maybe_generaotr):
-    if isinstance(maybe_generaotr, AsyncGeneratorType):
+async def _iter_and_warn(maybe_generator):
+    if isinstance(maybe_generator, AsyncGeneratorType):
         warnings.warn(
             "Returning an AsyncGenerator from the AsyncProcessor.process method "
             "is an experimental feature, and behaviours may change later.",
             UserWarning,
             stacklevel=1,
         )
-        async for obj in maybe_generaotr:
+        async for obj in maybe_generator:
             yield obj
         return
-    if isinstance(maybe_generaotr, GeneratorType):
+    if isinstance(maybe_generator, GeneratorType):
         warnings.warn(
             "Returning an Generator from the Processor.process method "
             "is an experimental feature, and behaviours may change later.",
             UserWarning,
             stacklevel=1,
         )
-        for obj in maybe_generaotr:
+        # NOTE: this will block the eventloop. Move it to a different thread.
+        for obj in maybe_generator:
             yield obj
         return
-    yield maybe_generaotr
+    yield maybe_generator
 
 
 def _prepare_failure_message_due_to_exception(
