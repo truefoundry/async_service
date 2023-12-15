@@ -209,7 +209,7 @@ async def _publish_response(
         )
 
 
-async def _iter_and_warn(maybe_generator):
+async def _iter_and_warn(maybe_generator) -> AsyncIterator:
     if isinstance(maybe_generator, AsyncGeneratorType):
         warnings.warn(
             "Returning an AsyncGenerator from the AsyncProcessor.process method "
