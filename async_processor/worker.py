@@ -334,8 +334,8 @@ class _Worker:
                 serialized_input_message=serialized_input_message,
                 received_at_epoch_ns=received_at_epoch_ns,
             )
-            pipeline = self._serialize_output_message(messages=pipeline)
             if output:
+                pipeline = self._serialize_output_message(messages=pipeline)
                 pipeline = self._publish_output_message(
                     messages=pipeline, output=output
                 )
@@ -344,7 +344,7 @@ class _Worker:
                     "Skipping publishing response as output config is not present"
                 )
 
-            async for _, output_message, *_ in pipeline:
+            async for _, output_message in pipeline:
                 collector.set_output_status(output_message.status)
 
     async def _process_single_step(self, input_: Input, output: Optional[Output]):
