@@ -186,7 +186,7 @@ class NATSInputConfig(InputConfig):
     nats_url: Union[str, List[str]]
     auth: Optional[NATSUserPasswordAuth] = None
     root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
-    consumer_name: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-_][a-zA-Z0-9]$")
+    consumer_name: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-_]+[a-zA-Z0-9]$")
     wait_time_seconds: confloat(ge=5) = 5
 
     def to_input(self) -> Input:
