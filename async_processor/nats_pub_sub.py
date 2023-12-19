@@ -77,7 +77,8 @@ class NATSInput(Input):
         jetstream = await self._get_js_client()
         try:
             await jetstream.consumer_info(
-                self._config.consumer_name, stream=self._config.stream_name
+                consumer=self._config.consumer_name,
+                stream=self._config.stream_name,
             )
         except NotFoundError as ex:
             raise Exception(
