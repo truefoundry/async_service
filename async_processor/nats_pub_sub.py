@@ -97,6 +97,7 @@ class NATSInput(Input):
             config=ConsumerConfig(
                 durable_name=self._config.consumer_name,
             ),
+            stream=self._config.stream_name,
         )
         return self._psub
 

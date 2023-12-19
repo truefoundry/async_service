@@ -188,6 +188,7 @@ class NATSInputConfig(InputConfig):
     root_subject: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-.]+[a-zA-Z0-9]$")
     consumer_name: constr(regex=r"^[a-zA-Z0-9][a-zA-Z0-9\-_]+[a-zA-Z0-9]$")
     wait_time_seconds: confloat(ge=5) = 5
+    stream_name: str
 
     def to_input(self) -> Input:
         from async_processor.nats_pub_sub import NATSInput
