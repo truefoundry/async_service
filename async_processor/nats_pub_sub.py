@@ -75,11 +75,10 @@ class NATSInput(Input):
 
     async def _validate_consumer_exists(self):
         jetstream = await self._get_js_client()
-        stream = await jetstream.find_stream_name_by_subject(
-            _get_work_queue_subject_pattern(self._config.root_subject)
-        )
         try:
-            await jetstream.consumer_info(stream, self._config.consumer_name)
+            await jetstream.consumer_info(
+                self._config.consumer_name, stream=self._config.stream_name
+            )
         except NotFoundError as ex:
             raise Exception(
                 f"Consumer {self._config.consumer_name!r} does not exist."
