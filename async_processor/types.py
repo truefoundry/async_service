@@ -34,12 +34,27 @@ class InputMessageInterface(abc.ABC, BaseModel):
     def should_stream_response(self) -> bool:
         ...
 
+    @abc.abstractmethod
+    def get_request_headers(self) -> Optional[Dict[str, Union[str, List[str]]]]:
+        ...
+
+    @abc.abstractmethod
+    def get_request_url_path(self) -> Optional[str]:
+        ...
+
+    @abc.abstractmethod
+    def get_request_method(self) -> Optional[str]:
+        ...
+
 
 class InputMessage(InputMessageInterface):
     request_id: constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")
     body: Any
     published_at_epoch_ns: Optional[int] = None
     stream_response: bool = False
+    request_headers: Optional[Dict[str, Union[str, List[str]]]] = None
+    request_url_path: Optional[str] = None
+    request_method: Optional[str] = None
 
     class Config:
         extra = Extra.forbid
@@ -58,6 +73,15 @@ class InputMessage(InputMessageInterface):
     def should_stream_response(self) -> bool:
         return self.stream_response
 
+    def get_request_headers(self) -> Optional[Dict[str, Union[str, List[str]]]]:
+        return self.request_headers
+
+    def get_request_url_path(self) -> Optional[str]:
+        return self.request_url_path
+
+    def get_request_method(self) -> Optional[str]:
+        return self.request_method
+
 
 # We cannot maintain two different types and should remove `InputMessage`
 # after sometime
@@ -65,6 +89,9 @@ class InputMessageV2(InputMessageInterface):
     tfy_request_id: Optional[constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")] = None
     tfy_published_at_epoch_ns: Optional[int] = None
     tfy_stream_response: bool = False
+    tfy_request_headers: Optional[Dict[str, Union[str, List[str]]]] = None
+    tfy_request_url_path: Optional[str] = None
+    tfy_request_method: Optional[str] = None
 
     class Config:
         extra = Extra.allow
@@ -88,6 +115,15 @@ class InputMessageV2(InputMessageInterface):
 
     def should_stream_response(self) -> bool:
         return self.tfy_stream_response
+
+    def get_request_headers(self) -> Optional[Dict[str, Union[str, List[str]]]]:
+        return self.tfy_request_headers
+
+    def get_request_url_path(self) -> Optional[str]:
+        return self.tfy_request_url_path
+
+    def get_request_method(self) -> Optional[str]:
+        return self.tfy_request_method
 
 
 class OutputMessage(BaseModel):
