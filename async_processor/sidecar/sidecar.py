@@ -88,7 +88,7 @@ class _StreamBatcher:
 
 
 def _resolve_url(input_message: InputMessageInterface) -> str:
-    url_from_message = input_message.get_request_url()
+    url_from_message = input_message.get_request_url_path()
 
     if not url_from_message:
         return settings.destination_url
