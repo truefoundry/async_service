@@ -1,6 +1,7 @@
 import asyncio
 import codecs
 from typing import AsyncIterator, Optional
+from urllib.parse import urlparse
 
 import aiohttp
 
@@ -86,6 +87,21 @@ class _StreamBatcher:
             raise self._fetcher_task.exception()
 
 
+def _resolve_url(input_message: InputMessageInterface) -> str:
+    url_from_message = input_message.get_request_url()
+
+    if not url_from_message:
+        return settings.destination_url
+
+    parsed_base_url = urlparse(settings.destination_url)
+    parsed_url_from_message = urlparse(url_from_message)
+
+    return parsed_url_from_message._replace(
+        netloc=parsed_base_url.netloc,
+        scheme=parsed_base_url.scheme,
+    ).geturl()
+
+
 class _SidecarProcessor(AsyncProcessor):
     def __init__(self):
         self._client_session: Optional[aiohttp.ClientSession] = None
@@ -111,8 +127,10 @@ class _SidecarProcessor(AsyncProcessor):
     async def _no_stream(
         self, input_message: InputMessageInterface
     ) -> AsyncIterator[OutputMessage]:
-        async with self._client_session.post(
-            settings.destination_url,
+        async with self._client_session.request(
+            method=(input_message.get_request_method() or "POST").upper(),
+            url=_resolve_url(input_message),
+            headers=input_message.get_request_headers(),
             json=input_message.get_body(),
             timeout=settings.request_timeout,
         ) as response:
@@ -130,8 +148,10 @@ class _SidecarProcessor(AsyncProcessor):
     async def _stream(
         self, input_message: InputMessageInterface
     ) -> AsyncIterator[OutputMessage]:
-        async with self._client_session.post(
-            settings.destination_url,
+        async with self._client_session.request(
+            method=(input_message.get_request_method() or "POST").upper(),
+            url=_resolve_url(input_message),
+            headers=input_message.get_request_headers(),
             json=input_message.get_body(),
             timeout=settings.request_timeout,
         ) as response:
