@@ -1,5 +1,6 @@
 import asyncio
 import codecs
+from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 from urllib.parse import urlparse
 
@@ -124,9 +125,8 @@ class _SidecarProcessor(AsyncProcessor):
                 )
                 await asyncio.sleep(1.0)
 
-    async def _no_stream(
-        self, input_message: InputMessageInterface
-    ) -> AsyncIterator[OutputMessage]:
+    @asynccontextmanager
+    async def _request(self, input_message: InputMessageInterface) -> AsyncIterator:
         async with self._client_session.request(
             method=(input_message.get_request_method() or "POST").upper(),
             url=_resolve_url(input_message),
@@ -134,6 +134,12 @@ class _SidecarProcessor(AsyncProcessor):
             json=input_message.get_body(),
             timeout=settings.request_timeout,
         ) as response:
+            yield response
+
+    async def _no_stream(
+        self, input_message: InputMessageInterface
+    ) -> AsyncIterator[OutputMessage]:
+        async with self._request(input_message) as response:
             status = ProcessStatus.SUCCESS if response.ok else ProcessStatus.FAILED
             yield OutputMessage(
                 request_id=input_message.get_request_id(),
@@ -148,13 +154,7 @@ class _SidecarProcessor(AsyncProcessor):
     async def _stream(
         self, input_message: InputMessageInterface
     ) -> AsyncIterator[OutputMessage]:
-        async with self._client_session.request(
-            method=(input_message.get_request_method() or "POST").upper(),
-            url=_resolve_url(input_message),
-            headers=input_message.get_request_headers(),
-            json=input_message.get_body(),
-            timeout=settings.request_timeout,
-        ) as response:
+        async with self._request(input_message) as response:
             status = ProcessStatus.SUCCESS if response.ok else ProcessStatus.FAILED
             content_type = response.headers.get("content-type")
 
