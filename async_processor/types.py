@@ -198,6 +198,9 @@ class NATSUserPasswordAuth(BaseModel):
     user: str
     password: str
 
+class AMQPUserPasswordAuth(BaseModel):
+    username: str
+    password: str
 
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
@@ -215,6 +218,17 @@ class SQSInputConfig(InputConfig):
 
         return SQSInput(self)
 
+class AMQPInputConfig(InputConfig):
+    type: constr(regex=r"^amqp$") = "amqp"
+
+    hostname: str
+    port: Optional[int] = 5672
+    auth: AMQPUserPasswordAuth
+    queue_name: str
+
+    def to_input(self) -> Input:
+        from async_processor.amqp_pub_sub import AMQPInput
+        return AMQPInput(self)
 
 class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
@@ -287,7 +301,18 @@ class SQSOutputConfig(OutputConfig):
 
         return SQSOutput(self)
 
+class AMQPOutputConfig(OutputConfig):
+    type: constr(regex=r"^AMQP$") = "AMQP"
 
+    hostname: str
+    queue_name: str
+    port: Optional[int] = 5672
+    auth: Optional[AMQPUserPasswordAuth] = None
+
+    def to_output(self) -> Output:
+        from async_processor.amqp_pub_sub import AMQPOutput
+        return AMQPOutput(self)
+    
 class NATSOutputConfig(OutputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
@@ -333,6 +358,7 @@ class WorkerConfig(BaseModel):
         SQSInputConfig,
         NATSInputConfig,
         KafkaInputConfig,
+        AMQPInputConfig,
         InputConfig,
     ]
     output_config: Optional[
@@ -341,6 +367,7 @@ class WorkerConfig(BaseModel):
             NATSOutputConfig,
             KafkaOutputConfig,
             CoreNATSOutputConfig,
+            AMQPOutputConfig,
             OutputConfig,
         ]
     ] = None
