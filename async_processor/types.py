@@ -198,9 +198,11 @@ class NATSUserPasswordAuth(BaseModel):
     user: str
     password: str
 
+
 class AMQPUserPasswordAuth(BaseModel):
     username: str
     password: str
+
 
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
@@ -218,6 +220,7 @@ class SQSInputConfig(InputConfig):
 
         return SQSInput(self)
 
+
 class AMQPInputConfig(InputConfig):
     type: constr(regex=r"^amqp$") = "amqp"
 
@@ -228,7 +231,9 @@ class AMQPInputConfig(InputConfig):
 
     def to_input(self) -> Input:
         from async_processor.amqp_pub_sub import AMQPInput
+
         return AMQPInput(self)
+
 
 class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
@@ -301,6 +306,7 @@ class SQSOutputConfig(OutputConfig):
 
         return SQSOutput(self)
 
+
 class AMQPOutputConfig(OutputConfig):
     type: constr(regex=r"^AMQP$") = "AMQP"
 
@@ -311,8 +317,10 @@ class AMQPOutputConfig(OutputConfig):
 
     def to_output(self) -> Output:
         from async_processor.amqp_pub_sub import AMQPOutput
+
         return AMQPOutput(self)
-    
+
+
 class NATSOutputConfig(OutputConfig):
     type: constr(regex=r"^nats$") = "nats"
 

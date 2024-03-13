@@ -2,6 +2,8 @@ from async_processor.app import ProcessorApp
 from async_processor.function_service import FunctionAsyncExecutor
 from async_processor.processor import AsyncProcessor, Processor
 from async_processor.types import (
+    AMQPInputConfig,
+    AMQPOutputConfig,
     AWSAccessKeyAuth,
     CoreNATSOutputConfig,
     Input,
@@ -14,8 +16,6 @@ from async_processor.types import (
     KafkaSASLAuth,
     NATSInputConfig,
     NATSOutputConfig,
-    AMQPInputConfig,
-    AMQPOutputConfig,
     Output,
     OutputConfig,
     OutputMessage,
