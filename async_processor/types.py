@@ -226,7 +226,7 @@ class AMQPInputConfig(InputConfig):
 
     hostname: str
     port: Optional[int] = 5672
-    auth: AMQPUserPasswordAuth
+    auth: Optional[AMQPUserPasswordAuth] = None
     queue_name: str
 
     def to_input(self) -> Input:
@@ -308,7 +308,7 @@ class SQSOutputConfig(OutputConfig):
 
 
 class AMQPOutputConfig(OutputConfig):
-    type: constr(regex=r"^AMQP$") = "AMQP"
+    type: constr(regex=r"^amqp$") = "amqp"
 
     hostname: str
     queue_name: str
