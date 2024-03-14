@@ -96,10 +96,7 @@ class AMQPOutput(Output):
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: Optional[str]
     ):
-        try:
-            queue = await self._get_channel()
-            await queue.default_exchange.publish(
-                Message(body=serialized_output_message), routing_key=self._queue_name
-            )
-        except AMQPError as ex:
-            raise InputFetchAckFailure(f"Error publishing output message: {ex}") from ex
+        queue = await self._get_channel()
+        await queue.default_exchange.publish(
+            Message(body=serialized_output_message), routing_key=self._queue_name
+        )
