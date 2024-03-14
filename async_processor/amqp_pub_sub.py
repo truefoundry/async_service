@@ -58,6 +58,7 @@ class AMQPInput(Input):
         try:
             await self._connect()
             async with self._connection.channel() as channel:
+                await channel.declare_queue(self._queue_name)
                 message_body = (
                     serialized_input_message
                     if isinstance(serialized_input_message, bytes)
@@ -91,11 +92,16 @@ class AMQPOutput(Output):
         try:
             await self._connect()
             async with self._connection.channel() as channel:
+                await channel.declare_queue(self._queue_name)
+                message_body = (
+                    serialized_output_message
+                    if isinstance(serialized_output_message, bytes)
+                    else serialized_output_message
+                )
                 await channel.default_exchange.publish(
-                    Message(body=serialized_output_message),
-                    routing_key=self._queue_name,
+                    Message(body=message_body), routing_key=self._queue_name
                 )
         except AMQPError as ex:
-            raise RuntimeError(f"Error publishing output message: {ex}") from ex
+            raise InputFetchAckFailure(f"Error publishing output message: {ex}") from ex
         finally:
             await self._disconnect()
