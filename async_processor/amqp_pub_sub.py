@@ -57,13 +57,12 @@ class AMQPInput(Input):
         except Exception as ex:
             raise InputMessageFetchFailure(f"Error fetch input message: {ex}") from ex
         finally:
-            if message:
-                try:
-                    await message.ack()
-                except Exception as ex:
-                    raise InputFetchAckFailure(
-                        f"Error publishing input message: {ex}"
-                    ) from ex
+            try:
+                await message.ack()
+            except Exception as ex:
+                raise InputFetchAckFailure(
+                    f"Error publishing input message: {ex}"
+                ) from ex
 
     async def publish_input_message(
         self, serialized_input_message: bytes, request_id: str
