@@ -13,7 +13,7 @@ from async_processor import (
     WorkerConfig,
 )
 
-#change this config
+# change this config
 input_queue_url = "amqp://guest:guest@localhost:5672/"
 input_queue_name = "home1"
 output_queue_url = "amqp://guest:guest@localhost:5672/"

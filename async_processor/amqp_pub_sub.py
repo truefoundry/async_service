@@ -98,7 +98,7 @@ class AMQPOutput(Output):
         await self._get_connect()
         self._channel = await self._connection.channel()
         return self._channel
-    
+
     async def _get_queue(self):
         if self._queue:
             return self._queue
