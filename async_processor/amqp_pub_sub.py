@@ -23,20 +23,23 @@ class AMQPInput(Input):
         self._queue = None
 
     async def _get_connect(self):
-        if not self._connection:
-            self._connection = await connect_robust(self._queue_url)
+        if self._connection:
+            return self._connection
+        self._connection = await connect_robust(self._queue_url)
         return self._connection
 
     async def _get_channel(self):
-        if not self._channel:
-            await self._get_connect()
-            self._channel = await self._connection.channel()
+        if self._channel:
+            return self._channel
+        await self._get_connect()
+        self._channel = await self._connection.channel()
         return self._channel
 
     async def _get_queue(self):
-        if not self._queue:
-            await self._get_channel()
-            self._queue = await self._channel.declare_queue(self._queue_name)
+        if self._queue:
+            return self._queue
+        await self._get_channel()
+        self._queue = await self._channel.declare_queue(self._queue_name)
         return self._queue
 
     @asynccontextmanager
