@@ -39,7 +39,7 @@ class AMQPInput(Input):
         if self._queue:
             return self._queue
         await self._get_channel()
-        self._queue = await self._channel.declare_queue(self._queue_name)
+        self._queue = await self._channel.declare_queue(self._queue_name, durable=True)
         return self._queue
 
     @asynccontextmanager
@@ -98,11 +98,19 @@ class AMQPOutput(Output):
         await self._get_connect()
         self._channel = await self._connection.channel()
         return self._channel
+    
+    async def _get_queue(self):
+        if self._queue:
+            return self._queue
+        await self._get_channel()
+        self._queue = await self._channel.declare_queue(self._queue_name, durable=True)
+        return self._queue
 
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: Optional[str]
     ):
-        queue = await self._get_channel()
-        await queue.default_exchange.publish(
+        channel = await self._get_channel()
+        await self._get_queue()
+        await channel.default_exchange.publish(
             Message(body=serialized_output_message), routing_key=self._queue_name
         )
