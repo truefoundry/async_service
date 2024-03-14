@@ -29,7 +29,7 @@ kafka-python = { version = ">=2.0.0,<2.1.0", optional = true }
 aio-pika = {version = "^9.4.0", optional = true}
 
 [tool.poetry.extras]
-pika = ["aio-pika"]
+amqp = ["aio-pika"]
 nats = ["nats-py"]
 sqs = ["boto3"]
 kafka = ["kafka-python"]
