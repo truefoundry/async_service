@@ -65,14 +65,10 @@ class AMQPInput(Input):
     async def publish_input_message(
         self, serialized_input_message: bytes, request_id: str
     ):
-        try:
-            channel = await self._get_channel()
-            await channel.default_exchange.publish(
-                Message(body=serialized_input_message), routing_key=self._queue_name
-            )
-        except AMQPError as ex:
-            raise InputFetchAckFailure(f"Error publishing input message: {ex}") from ex
-
+        channel = await self._get_channel()
+        await channel.default_exchange.publish(
+            Message(body=serialized_input_message), routing_key=self._queue_name
+        )
 
 class AMQPOutput(Output):
     def __init__(self, config: AMQPOutputConfig):
