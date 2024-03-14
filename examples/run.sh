@@ -8,4 +8,10 @@ if [ -z "$module_name" ]; then
     exit 1
 fi
 
+if [ -f "${module_name}" ]; then
+    module_name="${module_name%.py}"
+else
+    module_name="$module_name"
+fi
+
 gunicorn "$module_name:app" --workers 1 --worker-class uvicorn.workers.UvicornWorker --bind 127.0.0.1:8000

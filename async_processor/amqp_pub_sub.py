@@ -50,12 +50,15 @@ class AMQPInput(Input):
         queue = await self._get_queue()
         try:
             message = await queue.get(fail=False, timeout=self._wait_time_seconds)
-            if not message:
-                yield None
-                return
-            yield message.body.decode()
         except Exception as ex:
             raise InputMessageFetchFailure(f"Error fetch input message: {ex}") from ex
+        if not message:
+            yield None
+            return
+        try:
+            yield message.body.decode()
+        except Exception as ex:
+            raise InputMessageFetchFailure(f"Error decoding input message body: {ex}") from ex
         finally:
             try:
                 await message.ack()
@@ -82,14 +85,16 @@ class AMQPOutput(Output):
         self._queue = None
 
     async def _get_connect(self):
-        if not self._connection:
-            self._connection = await connect_robust(self._queue_url)
+        if self._connection:
+            return self._connection
+        self._connection = await connect_robust(self._queue_url)
         return self._connection
 
     async def _get_channel(self):
-        if not self._channel:
-            await self._get_connect()
-            self._channel = await self._connection.channel()
+        if self._channel:
+            return self._channel
+        await self._get_connect()
+        self._channel = await self._connection.channel()
         return self._channel
 
     async def publish_output_message(
