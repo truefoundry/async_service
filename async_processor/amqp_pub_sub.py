@@ -23,18 +23,18 @@ class AMQPInput(Input):
         self._queue = None
 
     async def _get_connect(self):
-        if self._connection is None:
+        if not self._connection:
             self._connection = await connect_robust(self._queue_url)
         return self._connection
 
     async def _get_channel(self):
-        if self._channel is None:
+        if not  self._channel:
             await self._get_connect()
             self._channel = await self._connection.channel()
         return self._channel
 
     async def _get_queue(self):
-        if self._queue is None:
+        if not self._queue:
             await self._get_channel()
             self._queue = await self._channel.declare_queue(self._queue_name)
         return self._queue
@@ -84,12 +84,12 @@ class AMQPOutput(Output):
         self._queue = None
 
     async def _get_connect(self):
-        if self._connection is None:
+        if not self._connection:
             self._connection = await connect_robust(self._queue_url)
         return self._connection
 
     async def _get_channel(self):
-        if self._channel is None:
+        if not self._channel:
             await self._get_connect()
             self._channel = await self._connection.channel()
         return self._channel
