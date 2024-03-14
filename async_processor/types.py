@@ -220,6 +220,7 @@ class AMQPInputConfig(InputConfig):
     type: constr(regex=r"^amqp$") = "amqp"
     queue_url: str
     queue_name: str
+    wait_time_seconds: conint(ge=1, le=20) = 5
 
     def to_input(self) -> Input:
         from async_processor.amqp_pub_sub import AMQPInput

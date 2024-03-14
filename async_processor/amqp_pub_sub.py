@@ -2,7 +2,6 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 from aio_pika import Message, connect_robust
-from aio_pika.exceptions import AMQPError
 
 from async_processor.types import (
     AMQPInputConfig,
@@ -18,6 +17,7 @@ class AMQPInput(Input):
     def __init__(self, config: AMQPInputConfig):
         self._queue_url = config.queue_url
         self._queue_name = config.queue_name
+        self._wait_time_seconds = config.wait_time_seconds
         self._connection = None
         self._channel = None
         self._queue = None
@@ -28,7 +28,7 @@ class AMQPInput(Input):
         return self._connection
 
     async def _get_channel(self):
-        if not  self._channel:
+        if not self._channel:
             await self._get_connect()
             self._channel = await self._connection.channel()
         return self._channel
@@ -46,7 +46,7 @@ class AMQPInput(Input):
         message = None
         queue = await self._get_queue()
         try:
-            message = await queue.get(fail=False, timeout=5)
+            message = await queue.get(fail=False, timeout=self._wait_time_seconds)
             if not message:
                 yield None
                 return
@@ -69,6 +69,7 @@ class AMQPInput(Input):
         await channel.default_exchange.publish(
             Message(body=serialized_input_message), routing_key=self._queue_name
         )
+
 
 class AMQPOutput(Output):
     def __init__(self, config: AMQPOutputConfig):
