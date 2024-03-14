@@ -2587,12 +2587,12 @@ docs = ["furo", "jaraco.packaging (>=9.3)", "jaraco.tidelift (>=1.4)", "rst.link
 testing = ["big-O", "jaraco.functools", "jaraco.itertools", "more-itertools", "pytest (>=6)", "pytest-checkdocs (>=2.4)", "pytest-cov", "pytest-enabler (>=2.2)", "pytest-ignore-flaky", "pytest-mypy", "pytest-ruff (>=0.2.1)"]
 
 [extras]
+amqp = ["aio-pika"]
 kafka = ["kafka-python"]
 nats = ["nats-py"]
-pika = ["aio-pika"]
 sqs = ["boto3"]
 
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.13"
-content-hash = "f62f8eb70b156c337db7af353537a129534b73b072a3b12c2a99956ec0d642f2"
+content-hash = "a3182ecd51c897a6b54e97e07eca600594da6dac971b353220789f677c30119c"
