@@ -47,13 +47,12 @@ class AMQPInput(Input):
         queue = await self._get_queue()
         try:
             message = await queue.get(fail=False, timeout=5)
+            if not message:
+                yield None
+                return
+            yield message.body.decode()
         except Exception as ex:
             raise InputMessageFetchFailure(f"Error fetch input message: {ex}") from ex
-        if not message:
-            yield None
-            return
-        try:
-            yield message.body.decode()
         finally:
             if message:
                 try:
