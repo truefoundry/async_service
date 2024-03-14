@@ -2,6 +2,7 @@ from async_processor.app import ProcessorApp
 from async_processor.function_service import FunctionAsyncExecutor
 from async_processor.processor import AsyncProcessor, Processor
 from async_processor.types import (
+    AMQPInputConfig,
     AWSAccessKeyAuth,
     CoreNATSOutputConfig,
     Input,
@@ -17,11 +18,8 @@ from async_processor.types import (
     Output,
     OutputConfig,
     OutputMessage,
-    ProcessStatus,
     SQSInputConfig,
     SQSOutputConfig,
-    AMQPInputConfig,
-    AMQPOutputConfig,
     WorkerConfig,
 )
 
@@ -34,8 +32,7 @@ __all__ = [
     "OutputMessage",
     "WorkerConfig",
     "AMQPInputConfig",
-    "AMQPOutputConfig"
-    "ProcessStatus",
+    "AMQPOutputConfig" "ProcessStatus",
     "SQSInputConfig",
     "SQSOutputConfig",
     "InputConfig",
