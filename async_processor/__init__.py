@@ -3,6 +3,7 @@ from async_processor.function_service import FunctionAsyncExecutor
 from async_processor.processor import AsyncProcessor, Processor
 from async_processor.types import (
     AMQPInputConfig,
+    AMQPOutputConfig,
     AWSAccessKeyAuth,
     CoreNATSOutputConfig,
     Input,
