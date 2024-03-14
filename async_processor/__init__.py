@@ -20,6 +20,8 @@ from async_processor.types import (
     ProcessStatus,
     SQSInputConfig,
     SQSOutputConfig,
+    AMQPInputConfig,
+    AMQPOutputConfig,
     WorkerConfig,
 )
 
@@ -31,6 +33,8 @@ __all__ = [
     "NATSOutputConfig",
     "OutputMessage",
     "WorkerConfig",
+    "AMQPInputConfig",
+    "AMQPOutputConfig"
     "ProcessStatus",
     "SQSInputConfig",
     "SQSOutputConfig",
