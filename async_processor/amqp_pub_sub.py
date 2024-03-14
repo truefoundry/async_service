@@ -58,7 +58,9 @@ class AMQPInput(Input):
         try:
             yield message.body.decode()
         except Exception as ex:
-            raise InputMessageFetchFailure(f"Error decoding input message body: {ex}") from ex
+            raise InputMessageFetchFailure(
+                f"Error decoding input message body: {ex}"
+            ) from ex
         finally:
             try:
                 await message.ack()
