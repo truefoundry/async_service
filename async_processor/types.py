@@ -216,6 +216,20 @@ class SQSInputConfig(InputConfig):
         return SQSInput(self)
 
 
+class AMQPInputConfig(InputConfig):
+    type: constr(regex=r"^amqp$") = "amqp"
+    queue_url: constr(
+        regex=r"^amqp:\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
+    )
+    queue_name: str
+    wait_time_seconds: conint(ge=1, le=20) = 5
+
+    def to_input(self) -> Input:
+        from async_processor.amqp_pub_sub import AMQPInput
+
+        return AMQPInput(self)
+
+
 class NATSInputConfig(InputConfig):
     type: constr(regex=r"^nats$") = "nats"
 
@@ -286,6 +300,21 @@ class SQSOutputConfig(OutputConfig):
         from async_processor.sqs_pub_sub import SQSOutput
 
         return SQSOutput(self)
+
+
+class AMQPOutputConfig(OutputConfig):
+    type: constr(regex=r"^amqp$") = "amqp"
+
+    queue_url: constr(
+        regex=r"^amqp:\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
+    )
+    queue_name: str
+    wait_time_seconds: confloat(ge=1) = 5
+
+    def to_output(self) -> Output:
+        from async_processor.amqp_pub_sub import AMQPOutput
+
+        return AMQPOutput(self)
 
 
 class NATSOutputConfig(OutputConfig):
