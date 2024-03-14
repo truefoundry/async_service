@@ -1,9 +1,9 @@
 from async_processor import (
+    AMQPInputConfig,
+    AMQPOutputConfig,
     InputMessage,
     Processor,
     WorkerConfig,
-    AMQPInputConfig,
-    AMQPOutputConfig,
 )
 
 
@@ -16,12 +16,10 @@ class MultiplicationProcessor(Processor):
 app = MultiplicationProcessor().build_app(
     worker_config=WorkerConfig(
         input_config=AMQPInputConfig(
-            queue_url="amqp://guest:guest@localhost:5672/",
-            queue_name="home1"
+            queue_url="amqp://guest:guest@localhost:5672/", queue_name="home1"
         ),
         output_config=AMQPOutputConfig(
-            queue_url="amqp://guest:guest@localhost:5672/",
-            queue_name="home2"
+            queue_url="amqp://guest:guest@localhost:5672/", queue_name="home2"
         ),
     ),
 )
