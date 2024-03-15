@@ -1,7 +1,7 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
-from aio_pika import Message, connect_robust
+from aio_pika import Channel, Message, connect_robust
 
 from async_processor.types import (
     AMQPInputConfig,
@@ -28,7 +28,7 @@ class AMQPInput(Input):
         self._connection = await connect_robust(self._queue_url)
         return self._connection
 
-    async def _get_channel(self):
+    async def _get_channel(self) -> Channel:
         if self._channel:
             return self._channel
         await self._get_connect()
@@ -45,7 +45,7 @@ class AMQPInput(Input):
     @asynccontextmanager
     async def get_input_message(
         self,
-    ) -> AsyncIterator[Optional[str]]:
+    ) -> AsyncIterator[Optional[bytes]]:
         message = None
         queue = await self._get_queue()
         try:
@@ -56,7 +56,7 @@ class AMQPInput(Input):
             yield None
             return
         try:
-            yield message.body.decode()
+            yield message.body
         except Exception as ex:
             raise InputMessageFetchFailure(
                 f"Error decoding input message body: {ex}"
@@ -92,7 +92,7 @@ class AMQPOutput(Output):
         self._connection = await connect_robust(self._queue_url)
         return self._connection
 
-    async def _get_channel(self):
+    async def _get_channel(self) -> Channel:
         if self._channel:
             return self._channel
         await self._get_connect()
