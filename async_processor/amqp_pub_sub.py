@@ -1,8 +1,11 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
-from aio_pika import Channel, Message, connect_robust
+from aio_pika import Message, connect_robust
+from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractQueue
+from aio_pika.exceptions import QueueEmpty
 
+from async_processor.logger import logger
 from async_processor.types import (
     AMQPInputConfig,
     AMQPOutputConfig,
@@ -22,24 +25,24 @@ class AMQPInput(Input):
         self._channel = None
         self._queue = None
 
-    async def _get_connect(self):
+    async def _get_connect(self) -> AbstractConnection:
         if self._connection:
             return self._connection
         self._connection = await connect_robust(self._queue_url)
         return self._connection
 
-    async def _get_channel(self) -> Channel:
+    async def _get_channel(self) -> AbstractChannel:
         if self._channel:
             return self._channel
-        await self._get_connect()
-        self._channel = await self._connection.channel()
+        connection = await self._get_connect()
+        self._channel = await connection.channel()
         return self._channel
 
-    async def _get_queue(self):
+    async def _get_queue(self) -> AbstractQueue:
         if self._queue:
             return self._queue
-        await self._get_channel()
-        self._queue = await self._channel.declare_queue(self._queue_name, durable=True)
+        channel = await self._get_channel()
+        self._queue = await channel.declare_queue(self._queue_name, durable=True)
         return self._queue
 
     @asynccontextmanager
@@ -50,6 +53,8 @@ class AMQPInput(Input):
         queue = await self._get_queue()
         try:
             message = await queue.get(fail=False, timeout=self._wait_time_seconds)
+        except QueueEmpty:
+            logger.debug("No message in queue")
         except Exception as ex:
             raise InputMessageFetchFailure(f"Error fetch input message: {ex}") from ex
         if not message:
@@ -86,24 +91,24 @@ class AMQPOutput(Output):
         self._channel = None
         self._queue = None
 
-    async def _get_connect(self):
+    async def _get_connect(self) -> AbstractConnection:
         if self._connection:
             return self._connection
         self._connection = await connect_robust(self._queue_url)
         return self._connection
 
-    async def _get_channel(self) -> Channel:
+    async def _get_channel(self) -> AbstractChannel:
         if self._channel:
             return self._channel
-        await self._get_connect()
-        self._channel = await self._connection.channel()
+        connection = await self._get_connect()
+        self._channel = await connection.channel()
         return self._channel
 
-    async def _get_queue(self):
+    async def _get_queue(self) -> AbstractQueue:
         if self._queue:
             return self._queue
-        await self._get_channel()
-        self._queue = await self._channel.declare_queue(self._queue_name, durable=True)
+        channel = await self._get_channel()
+        self._queue = await channel.declare_queue(self._queue_name, durable=True)
         return self._queue
 
     async def publish_output_message(
