@@ -3,7 +3,7 @@ from typing import AsyncIterator, Optional
 
 from aio_pika import Message, connect_robust
 from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractQueue
-from aio_pika.exceptions import QueueEmpty
+from aio_pika.exceptions import ChannelNotFoundEntity, QueueEmpty
 
 from async_processor.logger import logger
 from async_processor.types import (
@@ -18,32 +18,54 @@ from async_processor.types import (
 
 class AMQPInput(Input):
     def __init__(self, config: AMQPInputConfig):
-        self._queue_url = config.queue_url
+        self._url = config.url
         self._queue_name = config.queue_name
         self._wait_time_seconds = config.wait_time_seconds
-        self._connection = None
-        self._channel = None
+        self._nc = None
+        self._ch = None
         self._queue = None
 
+    async def _validate_consumer_exists(self):
+        channel = await self._get_channel()
+        try:
+            self._queue = await channel.declare_queue(self._queue_name, passive=True)
+        except ChannelNotFoundEntity as ex:
+            raise Exception(
+                f"Consumer {self._queue_name!r} does not exist."
+                " Please create the consumer before running the async processor."
+            ) from ex
+
+    async def __aenter__(self):
+        await self._validate_consumer_exists()
+        return self
+
     async def _get_connect(self) -> AbstractConnection:
-        if self._connection:
-            return self._connection
-        self._connection = await connect_robust(self._queue_url)
-        return self._connection
+        if self._nc:
+            return self._nc
+        self._nc = await connect_robust(self._url)
+        return self._nc
 
     async def _get_channel(self) -> AbstractChannel:
-        if self._channel:
-            return self._channel
+        if self._ch:
+            return self._ch
         connection = await self._get_connect()
-        self._channel = await connection.channel()
-        return self._channel
+        self._ch = await connection.channel()
+        return self._ch
 
     async def _get_queue(self) -> AbstractQueue:
         if self._queue:
             return self._queue
         channel = await self._get_channel()
-        self._queue = await channel.declare_queue(self._queue_name, durable=True)
+        self._queue = await channel.declare_queue(self._queue_name, passive=True)
         return self._queue
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if not self._nc:
+            return
+        try:
+            await self._nc.close()
+        except Exception:
+            logger.exception("Failed to drain and close nats connection")
 
     @asynccontextmanager
     async def get_input_message(
@@ -62,10 +84,6 @@ class AMQPInput(Input):
             return
         try:
             yield message.body
-        except Exception as ex:
-            raise InputMessageFetchFailure(
-                f"Error decoding input message body: {ex}"
-            ) from ex
         finally:
             try:
                 await message.ack()
@@ -85,31 +103,53 @@ class AMQPInput(Input):
 
 class AMQPOutput(Output):
     def __init__(self, config: AMQPOutputConfig):
-        self._queue_url = config.queue_url
+        self._url = config.url
         self._queue_name = config.queue_name
-        self._connection = None
-        self._channel = None
         self._queue = None
+        self._nc = None
+        self._ch = None
+
+    async def _validate_consumer_exists(self):
+        channel = await self._get_channel()
+        try:
+            self._queue = await channel.declare_queue(self._queue_name, passive=True)
+        except ChannelNotFoundEntity as ex:
+            raise Exception(
+                f"Consumer {self._queue_name!r} does not exist."
+                " Please create the consumer before running the async processor."
+            ) from ex
+
+    async def __aenter__(self):
+        await self._validate_consumer_exists()
+        return self
 
     async def _get_connect(self) -> AbstractConnection:
-        if self._connection:
-            return self._connection
-        self._connection = await connect_robust(self._queue_url)
-        return self._connection
+        if self._nc:
+            return self._nc
+        self._nc = await connect_robust(self._url)
+        return self._nc
 
     async def _get_channel(self) -> AbstractChannel:
-        if self._channel:
-            return self._channel
+        if self._ch:
+            return self._ch
         connection = await self._get_connect()
-        self._channel = await connection.channel()
-        return self._channel
+        self._ch = await connection.channel()
+        return self._ch
 
     async def _get_queue(self) -> AbstractQueue:
         if self._queue:
             return self._queue
         channel = await self._get_channel()
-        self._queue = await channel.declare_queue(self._queue_name, durable=True)
+        self._queue = await channel.declare_queue(self._queue_name, passive=True)
         return self._queue
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        if not self._nc:
+            return
+        try:
+            await self._nc.close()
+        except Exception:
+            logger.exception("Failed to drain and close nats connection")
 
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: Optional[str]

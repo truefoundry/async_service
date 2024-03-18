@@ -218,7 +218,7 @@ class SQSInputConfig(InputConfig):
 
 class AMQPInputConfig(InputConfig):
     type: constr(regex=r"^amqp$") = "amqp"
-    queue_url: constr(
+    url: constr(
         regex=r"^(?:amqp|amqps):\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
     )
     queue_name: str
@@ -305,7 +305,7 @@ class SQSOutputConfig(OutputConfig):
 class AMQPOutputConfig(OutputConfig):
     type: constr(regex=r"^amqp$") = "amqp"
 
-    queue_url: constr(
+    url: constr(
         regex=r"^(?:amqp|amqps):\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
     )
     queue_name: str

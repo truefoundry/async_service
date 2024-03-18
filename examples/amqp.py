@@ -14,9 +14,9 @@ from async_processor import (
 )
 
 # change this config
-input_queue_url = "amqp://guest:guest@localhost:5672/"
+input_url = "amqp://guest:guest@localhost:5672/"
 input_queue_name = "home1"
-output_queue_url = "amqp://guest:guest@localhost:5672/"
+output_url = "amqp://guest:guest@localhost:5672/"
 output_queue_name = "home2"
 
 
@@ -28,18 +28,14 @@ class MultiplicationProcessor(Processor):
 
 app = MultiplicationProcessor().build_app(
     worker_config=WorkerConfig(
-        input_config=AMQPInputConfig(
-            queue_url=input_queue_url, queue_name=input_queue_name
-        ),
-        output_config=AMQPOutputConfig(
-            queue_url=output_queue_url, queue_name=output_queue_name
-        ),
+        input_config=AMQPInputConfig(url=input_url, queue_name=input_queue_name),
+        output_config=AMQPOutputConfig(url=output_url, queue_name=output_queue_name),
     ),
 )
 
 
-async def send_request(queue_url: str, routing_key: str):
-    connection = await aio_pika.connect_robust(queue_url)
+async def send_request(url: str, routing_key: str):
+    connection = await aio_pika.connect_robust(url)
 
     async with connection:
         request_id = str(uuid.uuid4())
@@ -60,7 +56,7 @@ async def send_request(queue_url: str, routing_key: str):
 
 async def test():
     for _ in range(100):
-        await send_request(queue_url=input_queue_url, routing_key=input_queue_name)
+        await send_request(url=input_url, routing_key=input_queue_name)
 
 
 if __name__ == "__main__":
