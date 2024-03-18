@@ -362,6 +362,7 @@ class WorkerConfig(BaseModel):
         SQSInputConfig,
         NATSInputConfig,
         KafkaInputConfig,
+        AMQPInputConfig,
         InputConfig,
     ]
     output_config: Optional[
@@ -370,6 +371,7 @@ class WorkerConfig(BaseModel):
             NATSOutputConfig,
             KafkaOutputConfig,
             CoreNATSOutputConfig,
+            AMQPOutputConfig,
             OutputConfig,
         ]
     ] = None
