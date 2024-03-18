@@ -25,18 +25,18 @@ class AMQPInput(Input):
         self._ch = None
         self._queue = None
 
-    async def _validate_consumer_exists(self):
+    async def _validate_queue_exists(self):
         channel = await self._get_channel()
         try:
             self._queue = await channel.declare_queue(self._queue_name, passive=True)
         except ChannelNotFoundEntity as ex:
             raise Exception(
-                f"Consumer {self._queue_name!r} does not exist."
-                " Please create the consumer before running the async processor."
+                f"Queue {self._queue_name!r} does not exist."
+                " Please create the queue before running the async processor."
             ) from ex
 
     async def __aenter__(self):
-        await self._validate_consumer_exists()
+        await self._validate_queue_exists()
         return self
 
     async def _get_connect(self) -> AbstractConnection:
@@ -109,18 +109,18 @@ class AMQPOutput(Output):
         self._nc = None
         self._ch = None
 
-    async def _validate_consumer_exists(self):
+    async def _validate_queue_exists(self):
         channel = await self._get_channel()
         try:
             self._queue = await channel.declare_queue(self._queue_name, passive=True)
         except ChannelNotFoundEntity as ex:
             raise Exception(
-                f"Consumer {self._queue_name!r} does not exist."
-                " Please create the consumer before running the async processor."
+                f"Queue {self._queue_name!r} does not exist."
+                " Please create the queue before running the async processor."
             ) from ex
 
     async def __aenter__(self):
-        await self._validate_consumer_exists()
+        await self._validate_queue_exists()
         return self
 
     async def _get_connect(self) -> AbstractConnection:
