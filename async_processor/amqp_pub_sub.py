@@ -149,15 +149,24 @@ class AMQPOutput(Output):
             ) from ex
 
     async def __aenter__(self):
-        await self._validate_exchange_exists()
+        await self._get_exchange()
         return self
 
     async def _get_exchange(self) -> AbstractExchange:
         if self._exchange:
             return self._exchange
         channel = await self._get_channel()
-        # Since, we have already ensured the exchange, we can set ensure=False
-        self._exchange = await channel.get_exchange(self._exchange_name, ensure=False)
+        try:
+            # https://aio-pika.readthedocs.io/en/latest/apidoc.html#aio_pika.Channel.get_exchange
+            # Keep ensure=True only if exchange_name is provided
+            self._exchange = await channel.get_exchange(
+                self._exchange_name, ensure=True if self._exchange_name else False
+            )
+        except ChannelNotFoundEntity as ex:
+            raise Exception(
+                f"Exchange {self._exchange_name!r} does not exist."
+                " Please create the exchange before running the async processor."
+            ) from ex
         return self._exchange
 
     async def __aexit__(self, exc_type, exc_value, traceback):
