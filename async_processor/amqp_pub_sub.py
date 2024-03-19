@@ -2,7 +2,12 @@ from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
 
 from aio_pika import Message, connect_robust
-from aio_pika.abc import AbstractChannel, AbstractConnection, AbstractQueue
+from aio_pika.abc import (
+    AbstractChannel,
+    AbstractConnection,
+    AbstractExchange,
+    AbstractQueue,
+)
 from aio_pika.exceptions import ChannelNotFoundEntity, QueueEmpty
 
 from async_processor.logger import logger
@@ -60,12 +65,17 @@ class AMQPInput(Input):
         return self._queue
 
     async def __aexit__(self, exc_type, exc_value, traceback):
+        if self._ch:
+            try:
+                await self._ch.close()
+            except Exception:
+                logger.exception("Failed to drain and close AMQP channel")
         if not self._nc:
             return
         try:
             await self._nc.close()
         except Exception:
-            logger.exception("Failed to drain and close nats connection")
+            logger.exception("Failed to drain and close AMQP connection")
 
     @asynccontextmanager
     async def get_input_message(
@@ -104,24 +114,11 @@ class AMQPInput(Input):
 class AMQPOutput(Output):
     def __init__(self, config: AMQPOutputConfig):
         self._url = config.url
-        self._queue_name = config.queue_name
-        self._queue = None
+        self._exchange_name = config.exchange_name
+        self._routing_key = config.routing_key
+        self._exchange = None
         self._nc = None
         self._ch = None
-
-    async def _validate_queue_exists(self):
-        channel = await self._get_channel()
-        try:
-            self._queue = await channel.declare_queue(self._queue_name, passive=True)
-        except ChannelNotFoundEntity as ex:
-            raise Exception(
-                f"Queue {self._queue_name!r} does not exist."
-                " Please create the queue before running the async processor."
-            ) from ex
-
-    async def __aenter__(self):
-        await self._validate_queue_exists()
-        return self
 
     async def _get_connect(self) -> AbstractConnection:
         if self._nc:
@@ -136,26 +133,50 @@ class AMQPOutput(Output):
         self._ch = await connection.channel()
         return self._ch
 
-    async def _get_queue(self) -> AbstractQueue:
-        if self._queue:
-            return self._queue
+    async def _validate_exchange_exists(self):
+        if not self._exchange_name:
+            return
         channel = await self._get_channel()
-        self._queue = await channel.declare_queue(self._queue_name, passive=True)
-        return self._queue
+        try:
+            # https://aio-pika.readthedocs.io/en/latest/apidoc.html#aio_pika.Channel.get_exchange
+            self._exchange = await channel.get_exchange(
+                self._exchange_name, ensure=True
+            )
+        except ChannelNotFoundEntity as ex:
+            raise Exception(
+                f"Exchange {self._exchange_name!r} does not exist."
+                " Please create the exchange before running the async processor."
+            ) from ex
+
+    async def __aenter__(self):
+        await self._validate_exchange_exists()
+        return self
+
+    async def _get_exchange(self) -> AbstractExchange:
+        if self._exchange:
+            return self._exchange
+        channel = await self._get_channel()
+        # Since, we have already ensured the exchange, we can set ensure=False
+        self._exchange = await channel.get_exchange(self._exchange_name, ensure=False)
+        return self._exchange
 
     async def __aexit__(self, exc_type, exc_value, traceback):
+        if self._ch:
+            try:
+                await self._ch.close()
+            except Exception:
+                logger.exception("Failed to drain and close AMQP channel")
         if not self._nc:
             return
         try:
             await self._nc.close()
         except Exception:
-            logger.exception("Failed to drain and close nats connection")
+            logger.exception("Failed to drain and close AMQP connection")
 
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: Optional[str]
     ):
-        channel = await self._get_channel()
-        await self._get_queue()
-        await channel.default_exchange.publish(
-            Message(body=serialized_output_message), routing_key=self._queue_name
+        exchange = await self._get_exchange()
+        await exchange.publish(
+            Message(body=serialized_output_message), routing_key=self._routing_key
         )
