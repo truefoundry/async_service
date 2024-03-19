@@ -308,8 +308,8 @@ class AMQPOutputConfig(OutputConfig):
     url: constr(
         regex=r"^(?:amqp|amqps):\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
     )
-    queue_name: str
-    wait_time_seconds: confloat(ge=1) = 5
+    routing_key: str
+    exchange_name: str = ""
 
     def to_output(self) -> Output:
         from async_processor.amqp_pub_sub import AMQPOutput

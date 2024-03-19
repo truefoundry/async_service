@@ -17,7 +17,8 @@ from async_processor import (
 input_url = "amqp://guest:guest@localhost:5672/"
 input_queue_name = "home1"
 output_url = "amqp://guest:guest@localhost:5672/"
-output_queue_name = "home2"
+exchange_name = ""
+routing_key = "home2"
 
 
 class MultiplicationProcessor(Processor):
@@ -29,7 +30,9 @@ class MultiplicationProcessor(Processor):
 app = MultiplicationProcessor().build_app(
     worker_config=WorkerConfig(
         input_config=AMQPInputConfig(url=input_url, queue_name=input_queue_name),
-        output_config=AMQPOutputConfig(url=output_url, queue_name=output_queue_name),
+        output_config=AMQPOutputConfig(
+            url=output_url, exchange_name=exchange_name, routing_key=routing_key
+        ),
     ),
 )
 
