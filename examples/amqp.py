@@ -16,14 +16,12 @@ from async_processor import (
 
 
 def parse_amqp_url(input_url):
-    config = {}
     parsed_url = urlparse(input_url)
-    # config['username'] = parsed_url.username
-    # config['password'] = parsed_url.password
-    config["host"] = parsed_url.hostname
-    config["port"] = parsed_url.port or 5672
-    config["virtual_host"] = parsed_url.path[1:] if parsed_url.path else "/"
-    return config
+    return {
+        "host": parsed_url.hostname,
+        "port": parsed_url.port or 5672,
+        "virtual_host": parsed_url.path[1:] if parsed_url.path else "/",
+    }
 
 
 # change this config
