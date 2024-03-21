@@ -198,6 +198,9 @@ class NATSUserPasswordAuth(BaseModel):
     user: str
     password: str
 
+class AMQPUserPasswordAuth(BaseModel):
+    login: str
+    password: str
 
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
@@ -221,8 +224,9 @@ class AMQPInputConfig(InputConfig):
     url: constr(
         regex=r"^(?:amqp|amqps):\/\/(?:([^:/?#\s]+)(?::([^@/?#\s]+))?@)?([^/?#\s]+)(?::(\d+))?\/?([^?#\s]*)?(?:\?(.*))?$"
     )
-    queue_name: str
+    routing_key: str
     wait_time_seconds: conint(ge=1, le=20) = 5
+    auth: Optional[AMQPUserPasswordAuth] = None
 
     def to_input(self) -> Input:
         from async_processor.amqp_pub_sub import AMQPInput
@@ -310,6 +314,7 @@ class AMQPOutputConfig(OutputConfig):
     )
     routing_key: str
     exchange_name: str = ""
+    auth: Optional[AMQPUserPasswordAuth] = None
 
     def to_output(self) -> Output:
         from async_processor.amqp_pub_sub import AMQPOutput
