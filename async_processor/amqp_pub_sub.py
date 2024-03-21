@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from typing import AsyncIterator, Optional
+from urllib.parse import urlparse
 
 from aio_pika import Message, connect_robust
 from aio_pika.abc import (
@@ -19,7 +20,6 @@ from async_processor.types import (
     InputMessageFetchFailure,
     Output,
 )
-from urllib.parse import urlparse
 
 
 def parse_amqp_url(input_url):
@@ -27,9 +27,9 @@ def parse_amqp_url(input_url):
     parsed_url = urlparse(input_url)
     # config['username'] = parsed_url.username
     # config['password'] = parsed_url.password
-    config['host'] = parsed_url.hostname
-    config['port'] = parsed_url.port or 5672
-    config['virtual_host'] = parsed_url.path[1:] if parsed_url.path else "/"
+    config["host"] = parsed_url.hostname
+    config["port"] = parsed_url.port or 5672
+    config["virtual_host"] = parsed_url.path[1:] if parsed_url.path else "/"
     return config
 
 
@@ -43,7 +43,9 @@ class AMQPInput(Input):
     async def _validate_queue_exists(self):
         channel = await self._get_channel()
         try:
-            self._queue = await channel.declare_queue(self._config.routing_key, passive=True)
+            self._queue = await channel.declare_queue(
+                self._config.routing_key, passive=True
+            )
         except ChannelNotFoundEntity as ex:
             raise Exception(
                 f"Queue {self._config.routing_key!r} does not exist."
@@ -57,11 +59,16 @@ class AMQPInput(Input):
     async def _get_connect(self) -> AbstractConnection:
         if self._nc:
             return self._nc
-        
+
         if self._config.auth:
             auth = self._config.auth.dict()
             _pc = parse_amqp_url(self._config.url)
-            self._nc = await connect_robust(host=_pc['host'], port=_pc['port'], virtualhost=_pc['virtual_host'], **auth)
+            self._nc = await connect_robust(
+                host=_pc["host"],
+                port=_pc["port"],
+                virtualhost=_pc["virtual_host"],
+                **auth,
+            )
         else:
             self._nc = await connect_robust(self._config.url)
         return self._nc
@@ -77,7 +84,9 @@ class AMQPInput(Input):
         if self._queue:
             return self._queue
         channel = await self._get_channel()
-        self._queue = await channel.declare_queue(self._config.routing_key, passive=True)
+        self._queue = await channel.declare_queue(
+            self._config.routing_key, passive=True
+        )
         return self._queue
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -100,7 +109,9 @@ class AMQPInput(Input):
         message = None
         queue = await self._get_queue()
         try:
-            message = await queue.get(fail=False, timeout=self._config.wait_time_seconds)
+            message = await queue.get(
+                fail=False, timeout=self._config.wait_time_seconds
+            )
         except QueueEmpty:
             logger.debug("No message in queue")
         except Exception as ex:
@@ -140,7 +151,12 @@ class AMQPOutput(Output):
         if self._config.auth:
             auth = self._config.auth.dict()
             _pc = parse_amqp_url(self._config.url)
-            self._nc = await connect_robust(host=_pc['host'], port=_pc['port'], virtualhost=_pc['virtual_host'], **auth)
+            self._nc = await connect_robust(
+                host=_pc["host"],
+                port=_pc["port"],
+                virtualhost=_pc["virtual_host"],
+                **auth,
+            )
         else:
             self._nc = await connect_robust(self._config.url)
         return self._nc
@@ -164,7 +180,8 @@ class AMQPOutput(Output):
             # https://aio-pika.readthedocs.io/en/latest/apidoc.html#aio_pika.Channel.get_exchange
             # Keep ensure=True only if exchange_name is provided
             self._exchange = await channel.get_exchange(
-                self._config.exchange_name, ensure=True if self._config.exchange_name else False
+                self._config.exchange_name,
+                ensure=True if self._config.exchange_name else False,
             )
         except ChannelNotFoundEntity as ex:
             raise Exception(
@@ -191,5 +208,6 @@ class AMQPOutput(Output):
     ):
         exchange = await self._get_exchange()
         await exchange.publish(
-            Message(body=serialized_output_message), routing_key=self._config.routing_key
+            Message(body=serialized_output_message),
+            routing_key=self._config.routing_key,
         )

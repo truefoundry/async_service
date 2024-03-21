@@ -198,9 +198,11 @@ class NATSUserPasswordAuth(BaseModel):
     user: str
     password: str
 
+
 class AMQPUserPasswordAuth(BaseModel):
     login: str
     password: str
+
 
 class SQSInputConfig(InputConfig):
     type: constr(regex=r"^sqs$") = "sqs"
