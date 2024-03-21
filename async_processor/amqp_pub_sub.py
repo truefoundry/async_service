@@ -46,7 +46,7 @@ class AMQPInput(Input):
             self._queue = await channel.declare_queue(self._config.routing_key, passive=True)
         except ChannelNotFoundEntity as ex:
             raise Exception(
-                f"Queue {self._config.queue_name!r} does not exist."
+                f"Queue {self._config.routing_key!r} does not exist."
                 " Please create the queue before running the async processor."
             ) from ex
 
@@ -77,7 +77,7 @@ class AMQPInput(Input):
         if self._queue:
             return self._queue
         channel = await self._get_channel()
-        self._queue = await channel.declare_queue(self._config.queue_name, passive=True)
+        self._queue = await channel.declare_queue(self._config.routing_key, passive=True)
         return self._queue
 
     async def __aexit__(self, exc_type, exc_value, traceback):
@@ -123,7 +123,7 @@ class AMQPInput(Input):
     ):
         channel = await self._get_channel()
         await channel.default_exchange.publish(
-            Message(body=serialized_input_message), routing_key=self._config.queue_name
+            Message(body=serialized_input_message), routing_key=self._config.routing_key
         )
 
 

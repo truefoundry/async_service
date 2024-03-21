@@ -30,16 +30,16 @@ def parse_amqp_url(input_url):
 input_url = "amqp://localhost:5672/"
 input_routing_key = "home1"
 input_auth = {
-     "login": "user1",
-    "password": "password"
+    "login": "guest",
+    "password": "guest"
 }
 output_url = "amqp://localhost:5672/"
 output_exchange_name = ""
 output_routing_key = "home2"
 output_auth = {
-        "login": "user1",
-        "password": "password"
-    }
+    "login": "guest",
+    "password": "guest"
+}
 
 
 class MultiplicationProcessor(Processor):
@@ -53,20 +53,24 @@ app = MultiplicationProcessor().build_app(
         input_config=AMQPInputConfig(
             url=input_url, 
             routing_key=input_routing_key,
-            # auth=input_auth
+            auth=input_auth
         ),
         output_config=AMQPOutputConfig(
             url=output_url, 
             exchange_name=output_exchange_name,
             routing_key=output_routing_key,
-            auth=output_auth
+            # auth=output_auth
         ),
     ),
 )
 
 
-async def send_request(url: str, routing_key: str):
-    connection = await aio_pika.connect_robust(url)
+async def send_request(url: str, auth: dict, routing_key: str):
+    if auth:
+        _pc = parse_amqp_url(url)
+        connection = await aio_pika.connect_robust(host=_pc['host'], port=_pc['port'], virtualhost=_pc['virtual_host'], **auth)
+    else:
+        connection = await aio_pika.connect_robust(url)
 
     async with connection:
         request_id = str(uuid.uuid4())
@@ -87,7 +91,7 @@ async def send_request(url: str, routing_key: str):
 
 async def test():
     for _ in range(100):
-        await send_request(url=input_url, routing_key=input_routing_key)
+        await send_request(url=input_url, auth=input_auth, routing_key=input_routing_key)
 
 
 if __name__ == "__main__":
