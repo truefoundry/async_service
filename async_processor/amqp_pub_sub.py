@@ -142,7 +142,11 @@ class AMQPOutput(Output):
         return self._ch
 
     async def __aenter__(self):
-        await self._get_exchange()
+        try:
+            await self._get_exchange()
+        except Exception as ex:
+            await self._close()
+            raise ex
         return self
 
     async def _get_exchange(self) -> AbstractExchange:
@@ -162,7 +166,8 @@ class AMQPOutput(Output):
             ) from ex
         return self._exchange
 
-    async def __aexit__(self, exc_type, exc_value, traceback):
+    async def _close(self):
+        logger.info("closing connection")
         if self._ch:
             try:
                 await self._ch.close()
@@ -174,6 +179,9 @@ class AMQPOutput(Output):
             await self._nc.close()
         except Exception:
             logger.exception("Failed to drain and close AMQP connection")
+
+    async def __aexit__(self, exc_type, exc_value, traceback):
+        await self._close()
 
     async def publish_output_message(
         self, serialized_output_message: bytes, request_id: Optional[str]
