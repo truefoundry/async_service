@@ -69,6 +69,7 @@ class AMQPInput(Input):
         return self._queue
 
     async def _close(self):
+        logger.info("closing connection")
         if self._ch:
             try:
                 await self._ch.close()
