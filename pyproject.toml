@@ -10,7 +10,7 @@ packages = [{include = "async_processor"}]
 # TODO (chiragjn): Loosen these requirements for use as a library dependency. Sidecar method can choose to have exactly pinned versions
 python = ">=3.8,<3.13"
 prometheus_client = ">=0.17.1,<0.18.0"
-fastapi = ">=0.93.0,<=0.109.1"
+fastapi = ">=0.93.0,<0.110.0"
 gunicorn = ">=21.2.0,<21.3.0"
 uvicorn = ">=0.23.2,<0.24.0"
 orjson = ">=3.9.2,<3.10.0"
