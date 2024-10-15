@@ -41,6 +41,8 @@ jobs:
         with:
           context: .
           push: true
+          provenance: false
+          platforms: linux/amd64,linux/arm64
           tags: ${{ env.ARTIFACTORY_REPOSITORY_URL }}:${{ env.IMAGE_TAG }}
           cache-from: type=registry,ref=${{ env.ARTIFACTORY_REPOSITORY_URL }}:buildcache
           cache-to: mode=max,image-manifest=true,type=registry,ref=${{ env.ARTIFACTORY_REPOSITORY_URL }}:buildcache
