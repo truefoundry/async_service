@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 python:3.9-slim
+FROM python:3.9-slim
 ENV DEBIAN_FRONTEND=noninteractive
 RUN python -m pip install -U pip setuptools wheel poetry
 WORKDIR /code
