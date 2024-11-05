@@ -10,12 +10,12 @@ packages = [{include = "async_processor"}]
 # TODO (chiragjn): Loosen these requirements for use as a library dependency. Sidecar method can choose to have exactly pinned versions
 python = ">=3.8,<3.13"
 prometheus_client = ">=0.17.1,<0.18.0"
-fastapi = ">=0.93.0,<0.110.0"
-gunicorn = ">=21.2.0,<22.1.0"
-uvicorn = ">=0.23.2,<0.24.0"
+fastapi = ">=0.93.0,<0.116.0"
+gunicorn = ">=21.2.0,<24.0.0"
+uvicorn = ">=0.23.2,<0.32.0"
 orjson = ">=3.9.2,<3.10.0"
-starlette = ">=0.27.0,<0.36.0"
-pydantic = ">=1.10.12,<2.6.0"
+starlette = ">=0.27.0,<0.42.0"
+pydantic = ">=1.10.12,<2.10.0"
 requests = ">=2.31.0,<2.33.0"
 aiohttp = ">=3.8.6,<3.11.0"
 # TODO(chiragjn): Allow 2.x because it is backward-compatible
