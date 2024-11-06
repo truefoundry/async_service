@@ -4,7 +4,7 @@ on:
   push:
     branches:
       - 'main'
-      - add-build-workflow
+      - public-build-workflow
 
 permissions:
   id-token: write
