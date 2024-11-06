@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - public-build-workflow
 
 permissions:
   id-token: write
@@ -12,7 +13,7 @@ permissions:
 jobs:
   build:
     name: Build
-    uses: truefoundry/github-workflows-public/.github/workflows/build.yml@v0.1.1
+    uses: truefoundry/github-workflows-public/.github/workflows/build.yml@v0.1
     with:
       image_tag: ${{ github.sha }}
       image_artifact_name: async_processor
