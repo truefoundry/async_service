@@ -12,7 +12,7 @@ permissions:
 jobs:
   build:
     name: Build
-    uses: truefoundry/workflows/.github/workflows/build.yml@v0.2.1
+    uses: truefoundry/github-workflows-public/.github/workflows/build.yml@v0.1.4
     with:
       image_tag: ${{ github.sha }}
       image_artifact_name: async_processor
