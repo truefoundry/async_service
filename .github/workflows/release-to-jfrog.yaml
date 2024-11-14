@@ -14,7 +14,6 @@ jobs:
     name: Build
     uses: truefoundry/github-workflows-public/.github/workflows/build.yml@v0.1.4
     with:
-      use_depot: false
       image_tag: ${{ github.sha }}
       image_artifact_name: async_processor
       artifactory_registry_url: ${{ vars.TRUEFOUNDRY_ARTIFACTORY_REGISTRY_URL }}
