@@ -48,7 +48,7 @@ class InputMessageInterface(abc.ABC, BaseModel):
 
 
 class InputMessage(InputMessageInterface):
-    request_id: constr(regex=r"^\S+$")
+    request_id: constr(min_length=1)
     body: Any
     published_at_epoch_ns: Optional[int] = None
     stream_response: bool = False
