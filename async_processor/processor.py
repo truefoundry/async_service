@@ -8,11 +8,9 @@ from starlette.concurrency import run_in_threadpool
 
 from async_processor.app import ProcessorApp
 from async_processor.logger import logger
-from async_processor.pydantic_v1 import ValidationError
 from async_processor.types import (
     InputMessage,
     InputMessageInterface,
-    InputMessageV2,
     OutputMessage,
     WorkerConfig,
 )
@@ -39,10 +37,7 @@ class BaseProcessor:
                 f"Expected dict, got {type(input_message)}"
             )
         logger.debug(f"Deserializing input message: {input_message!r}")
-        try:
-            return InputMessage(**input_message)
-        except ValidationError:
-            return InputMessageV2(**input_message)
+        return InputMessage(**input_message)
 
     def output_serializer(self, output_message: OutputMessage) -> bytes:
         logger.debug(f"Serializing output message: {output_message!r}")
