@@ -5,7 +5,7 @@ import uuid
 from typing import Any, Callable, Dict
 
 from async_processor.pydantic_v1 import BaseModel, create_model
-from async_processor.types import Input, InputMessage
+from async_processor.types import Input, InputMessageV2
 
 INTERNAL_FUNCTION_NAME = "internal_func_name"
 
@@ -72,7 +72,7 @@ async def send_request_to_queue(
 ):
     my_dict = input.dict()
     my_dict[INTERNAL_FUNCTION_NAME] = input.__class__.__name__
-    input_message = InputMessage(request_id=request_id, body=my_dict)
+    input_message = InputMessageV2(tfy_request_id=request_id, **my_dict)
 
     await input_publisher.publish_input_message(
         request_id=request_id,

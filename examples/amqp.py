@@ -8,7 +8,7 @@ import aio_pika
 from async_processor import (
     AMQPInputConfig,
     AMQPOutputConfig,
-    InputMessage,
+    InputMessageInterface,
     Processor,
     WorkerConfig,
 )
@@ -22,8 +22,8 @@ routing_key = "home2"
 
 
 class MultiplicationProcessor(Processor):
-    def process(self, input_message: InputMessage) -> int:
-        body = input_message.body
+    def process(self, input_message: InputMessageInterface) -> int:
+        body = input_message.get_body()
         return body["x"] * body["y"]
 
 

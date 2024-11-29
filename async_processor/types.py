@@ -47,44 +47,6 @@ class InputMessageInterface(abc.ABC, BaseModel):
         ...
 
 
-class InputMessage(InputMessageInterface):
-    request_id: constr(min_length=1)
-    body: Any
-    published_at_epoch_ns: Optional[int] = None
-    stream_response: bool = False
-    request_headers: Optional[Dict[str, Union[str, List[str]]]] = None
-    request_url_path: Optional[str] = None
-    request_method: Optional[str] = None
-
-    class Config:
-        extra = Extra.forbid
-
-    def get_request_id(self) -> Optional[str]:
-        return self.request_id
-
-    def get_published_at_epoch_ns(self) -> Optional[int]:
-        return self.published_at_epoch_ns
-
-    # TODO: this method is only here for sidecar
-    # move this logic to sidecar module
-    def get_body(self) -> Any:
-        return self.body
-
-    def should_stream_response(self) -> bool:
-        return self.stream_response
-
-    def get_request_headers(self) -> Optional[Dict[str, Union[str, List[str]]]]:
-        return self.request_headers
-
-    def get_request_url_path(self) -> Optional[str]:
-        return self.request_url_path
-
-    def get_request_method(self) -> Optional[str]:
-        return self.request_method
-
-
-# We cannot maintain two different types and should remove `InputMessage`
-# after sometime
 class InputMessageV2(InputMessageInterface):
     tfy_request_id: Optional[constr(regex=r"^[a-zA-Z0-9\-]{1,36}$")] = None
     tfy_published_at_epoch_ns: Optional[int] = None
@@ -102,8 +64,6 @@ class InputMessageV2(InputMessageInterface):
     def get_published_at_epoch_ns(self) -> Optional[int]:
         return self.tfy_published_at_epoch_ns
 
-    # TODO: this method is only here for sidecar
-    # move this logic to sidecar module
     def get_body(self) -> Dict:
         body = self.dict()
 
@@ -131,7 +91,7 @@ class OutputMessage(BaseModel):
     status: ProcessStatus
     body: Optional[Any] = None
     error: Optional[str] = None
-    input_message: Optional[Union[InputMessage, InputMessageV2]] = None
+    input_message: Optional[InputMessageV2] = None
 
     # these are experimental fields
     status_code: Optional[str] = None

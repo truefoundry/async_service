@@ -11,7 +11,7 @@ pip install "async_processor[sqs]"
 #### `app.py`
 ```python
 from async_processor import (
-    InputMessage,
+    InputMessageInterface,
     Processor,
     WorkerConfig,
     SQSInputConfig,
@@ -20,8 +20,8 @@ from async_processor import (
 
 
 class MultiplicationProcessor(Processor):
-    def process(self, input_message: InputMessage) -> int:
-        body = input_message.body
+    def process(self, input_message: InputMessageInterface) -> int:
+        body = input_message.get_body()
         return body["x"] * body["y"]
 
 
@@ -77,7 +77,7 @@ Output:
 import json
 import uuid
 
-from async_processor import InputMessage, OutputMessage, ProcessStatus
+from async_processor import InputMessageV2, OutputMessage, ProcessStatus
 import boto3
 
 
@@ -88,7 +88,7 @@ def send_request(input_sqs_url: str, output_sqs_url: str):
     sqs.send_message(
         QueueUrl=input_sqs_url,
         MessageBody=json.dumps(
-            InputMessage(request_id=request_id, body={"x": 1, "y": 2}).dict()
+            InputMessageV2(tfy_request_id=request_id, x=1, y=2).dict()
         ),
     )
 
