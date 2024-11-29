@@ -37,6 +37,9 @@ class BaseProcessor:
                 f"Expected dict, got {type(input_message)}"
             )
         logger.debug(f"Deserializing input message: {input_message!r}")
+
+        ## This is really risky as this can fail if `input_message` is hitting any pydantic internal fields.
+        ## MAKE THIS SAFE!!!
         return InputMessageV2(**input_message)
 
     def output_serializer(self, output_message: OutputMessage) -> bytes:
