@@ -13,7 +13,7 @@ from async_processor.function_service.utils import (
 )
 from async_processor.processor import Processor
 from async_processor.types import (
-    InputMessage,
+    InputMessageInterface,
     OutputMessage,
     OutputMessageFetchTimeoutError,
     WorkerConfig,
@@ -104,8 +104,8 @@ class FunctionAsyncExecutor:
                 if init_function:
                     init_function()
 
-            def process(self, input_message: InputMessage) -> int:
-                body = input_message.body
+            def process(self, input_message: InputMessageInterface) -> int:
+                body = input_message.get_body()
                 func_name = body.pop(INTERNAL_FUNCTION_NAME, None)
                 if func_name is None:
                     raise ValueError(

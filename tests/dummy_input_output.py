@@ -6,11 +6,17 @@ from typing import AsyncIterator, List, NamedTuple, Optional
 
 import orjson
 
-from async_processor import Input, InputConfig, InputMessage, Output, OutputConfig
+from async_processor import (
+    Input,
+    InputConfig,
+    InputMessageInterface,
+    Output,
+    OutputConfig,
+)
 
 
 class DummyInputConfig(InputConfig):
-    messages: List[InputMessage]
+    messages: List[InputMessageInterface]
 
     def to_input(self) -> Input:
         return DummyInput(self)
@@ -37,7 +43,7 @@ class DummyInput(Input):
 
 
 class _Result(NamedTuple):
-    request_id: str
+    request_id: Optional[str]
     serialized_output_message: bytes
 
 
@@ -46,7 +52,7 @@ class DummyOutput(Output):
         self._config = config
 
     async def publish_output_message(
-        self, serialized_output_message: bytes, request_id: str
+        self, serialized_output_message: bytes, request_id: str | None
     ):
         self._config.results.append(
             _Result(

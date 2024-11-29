@@ -8,7 +8,6 @@ from async_processor.types import (
     CoreNATSOutputConfig,
     Input,
     InputConfig,
-    InputMessage,
     InputMessageInterface,
     InputMessageV2,
     KafkaInputConfig,
@@ -28,7 +27,6 @@ from async_processor.types import (
 __all__ = [
     "ProcessorApp",
     "Processor",
-    "InputMessage",
     "NATSInputConfig",
     "NATSOutputConfig",
     "OutputMessage",

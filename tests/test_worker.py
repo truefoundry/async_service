@@ -5,7 +5,8 @@ import orjson
 
 from async_processor import (
     AsyncProcessor,
-    InputMessage,
+    InputMessageInterface,
+    InputMessageV2,
     OutputMessage,
     Processor,
     WorkerConfig,
@@ -24,19 +25,19 @@ async def _run_worker_manager(worker_manager: WorkerManager, stop_event: asyncio
 
 async def _test_processor_runner_with_output_config():
     class DummyProcessor(Processor):
-        def process(self, input_message: InputMessage):
+        def process(self, input_message: InputMessageInterface):
             return input_message
 
     class AsyncDummyProcessor(AsyncProcessor):
-        async def process(self, input_message: InputMessage):
+        async def process(self, input_message: InputMessageInterface):
             await asyncio.sleep(0.01)
             return input_message
 
     for P in (DummyProcessor, AsyncDummyProcessor):
         messages = [
-            InputMessage(request_id=str(uuid.uuid4()), body="1"),
-            InputMessage(request_id=uuid.uuid4().hex, body="2"),
-            InputMessage(request_id="3", body="3"),
+            InputMessageV2(tfy_request_id=str(uuid.uuid4()), body="1"),
+            InputMessageV2(tfy_request_id=uuid.uuid4().hex, body="2"),
+            InputMessageV2(tfy_request_id="3", body="3"),
         ]
         input_config = DummyInputConfig(messages=messages)
         output_config = DummyOutputConfig(results=[])
@@ -56,11 +57,12 @@ async def _test_processor_runner_with_output_config():
         assert len(messages) > 2
         assert len(messages) == len(output_config.results), len(output_config.results)
 
-        messages.sort(key=lambda x: x.request_id)
+        messages.sort(key=lambda x: x.get_request_id() or "")
         output_config.results.sort(key=lambda x: x.request_id)
 
         for input_message, output_message in zip(messages, output_config.results):
-            assert input_message.request_id == output_message.request_id
+            assert input_message.get_request_id() is not None
+            assert input_message.get_request_id() == output_message.request_id
             assert (
                 OutputMessage(
                     **orjson.loads(output_message.serialized_output_message)
@@ -71,20 +73,24 @@ async def _test_processor_runner_with_output_config():
 
 async def _test_processor_runner_no_output_config():
     class DummyProcessor(Processor):
-        def process(self, input_message: InputMessage):
-            results[input_message.request_id].append(1)
+        def process(self, input_message: InputMessageInterface):
+            request_id = input_message.get_request_id()
+            assert request_id is not None
+            results[request_id].append(1)
 
     class AsyncDummyProcessor(AsyncProcessor):
-        async def process(self, input_message: InputMessage):
+        async def process(self, input_message: InputMessageInterface):
             await asyncio.sleep(0.01)
-            results[input_message.request_id].append(1)
+            request_id = input_message.get_request_id()
+            assert request_id is not None
+            results[request_id].append(1)
 
     for P in (DummyProcessor, AsyncDummyProcessor):
         results = {"a": [], "b": [], "c": []}
         messages = [
-            InputMessage(request_id="a", body={}),
-            InputMessage(request_id="b", body={}),
-            InputMessage(request_id="c", body={}),
+            InputMessageV2(tfy_request_id="a", body={}),
+            InputMessageV2(tfy_request_id="b", body={}),
+            InputMessageV2(tfy_request_id="c", body={}),
         ]
         input_config = DummyInputConfig(messages=messages)
 
@@ -106,12 +112,12 @@ async def _test_processor_runner_no_output_config():
 
 async def _test_input_message_in_output_message_if_processing_fails():
     class DummyProcessor(Processor):
-        def process(self, input_message: InputMessage):
+        def process(self, input_message: InputMessageInterface):
             raise Exception
 
     messages = [
-        InputMessage(request_id="a", body={"foo": "bar"}),
-        InputMessage(request_id="c", body={"a": "b"}),
+        InputMessageV2(tfy_request_id="a", body={"foo": "bar"}),
+        InputMessageV2(tfy_request_id="c", body={"a": "b"}),
     ]
     input_config = DummyInputConfig(messages=messages)
     output_config = DummyOutputConfig(results=[])
@@ -126,10 +132,11 @@ async def _test_input_message_in_output_message_if_processing_fails():
     )
     await _run_worker_manager(worker_manager, stop_event)
 
-    messages.sort(key=lambda x: x.request_id)
+    messages.sort(key=lambda x: x.get_request_id() or "")
     output_config.results.sort(key=lambda x: x.request_id)
 
     for input_message, output_message in zip(messages, output_config.results):
+        assert input_message.get_request_id() is not None
         assert (
             OutputMessage(
                 **orjson.loads(output_message.serialized_output_message)
@@ -140,21 +147,21 @@ async def _test_input_message_in_output_message_if_processing_fails():
 
 async def _test_processor_runner_with_generator():
     class DummyProcessor(Processor):
-        def process(self, input_message: InputMessage):
+        def process(self, input_message: InputMessageInterface):
             for _ in range(2):
                 yield input_message
 
     class AsyncDummyProcessor(AsyncProcessor):
-        async def process(self, input_message: InputMessage):
+        async def process(self, input_message: InputMessageInterface):
             for _ in range(2):
                 await asyncio.sleep(0)
                 yield input_message
 
     for P in (DummyProcessor, AsyncDummyProcessor):
         messages = [
-            InputMessage(request_id=str(uuid.uuid4()), body="1"),
-            InputMessage(request_id=uuid.uuid4().hex, body="2"),
-            InputMessage(request_id="3", body="3"),
+            InputMessageV2(tfy_request_id=str(uuid.uuid4()), body="1"),
+            InputMessageV2(tfy_request_id=uuid.uuid4().hex, body="2"),
+            InputMessageV2(tfy_request_id="3", body="3"),
         ]
         input_config = DummyInputConfig(messages=messages)
         output_config = DummyOutputConfig(results=[])
