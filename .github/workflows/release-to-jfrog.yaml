@@ -36,7 +36,7 @@ jobs:
       - name: Checkout charts
         uses: actions/checkout@v4
         with:
-          repository: truefoundry/infra-charts
+          repository: truefoundry/helm-charts
           ref: 'main'
           token: ${{ secrets.TF_GITHUB_CI_ADMIN_TOKEN }}
           path: tmp_ahc
