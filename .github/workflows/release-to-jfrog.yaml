@@ -9,6 +9,9 @@ permissions:
   id-token: write
   contents: read
 
+env:
+  REPOSITORY_URL: ${{ vars.TRUEFOUNDRY_ARTIFACTORY_PUBLIC_REPOSITORY }}
+
 jobs:
   build:
     name: Build
@@ -22,3 +25,31 @@ jobs:
     secrets:
       artifactory_username: ${{ secrets.TRUEFOUNDRY_ARTIFACTORY_PUBLIC_USERNAME }}
       artifactory_password: ${{ secrets.TRUEFOUNDRY_ARTIFACTORY_PUBLIC_PASSWORD }}
+
+  update-chart:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout current repo
+        uses: actions/checkout@v4
+
+      - name: Checkout charts
+        uses: actions/checkout@v4
+        with:
+          repository: truefoundry/infra-charts
+          ref: 'main'
+          token: ${{ secrets.TF_GITHUB_CI_ADMIN_TOKEN }}
+          path: tmp_ahc
+
+      - name: Update truefoundry chart values
+        run: |
+          sed -i "s|ASYNC_PROCESSOR_SIDECAR_IMAGE:.*|ASYNC_PROCESSOR_SIDECAR_IMAGE: ${{ env.REPOSITORY_URL }}/async_processor:${{ github.sha }}|g" tmp_ahc/charts/truefoundry/values.yaml
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v5
+        with:
+          commit-message: '[CI] Update truefoundry chart values'
+          branch: truefoundry-version-${{ github.sha }}
+          base: main
+          path: tmp_ahc
+          title: '[CI] Update truefoundry chart values.yaml - ASYNC_PROCESSOR_SIDECAR_IMAGE'
+          token: ${{ secrets.TF_GITHUB_CI_ADMIN_TOKEN }} 
