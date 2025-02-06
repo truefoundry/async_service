@@ -40,7 +40,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use ${{ matrix.python-version }}
-          poetry install
+          poetry install --all-extras --sync --no-interaction
 
       - name: Test & Code coverage with pytest
         run: |
@@ -69,8 +69,7 @@ jobs:
       - name: Install dependencies
         run: |
           poetry env use ${{ matrix.python-version }}
-          poetry lock --check
-          poetry install
+          poetry install --all-extras --sync --no-interaction
 
       - name: Check files with pre-commit
         run: |
