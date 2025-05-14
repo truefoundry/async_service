@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - 'main'
+      - cj_add_kakfa_compression_libs
 
 permissions:
   id-token: write
