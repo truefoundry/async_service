@@ -2,9 +2,9 @@ FROM registry.access.redhat.com/ubi9/ubi-minimal:9.5-1742914212
 SHELL ["/bin/bash", "-c"]
 USER root
 # Install snappy for kafka-python
-RUN curl -fSL "https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/$(uname -m)/os/Packages/snappy-1.1.8-8.el9.$(uname -m).rpm" -o /tmp/snappy.rpm && \
-    rpm -i /tmp/snappy.rpm && \
-    rm -f /tmp/snappy.rpm
+RUN curl -fSL "https://rpmfind.net/linux/centos-stream/9-stream/BaseOS/$(uname -m)/os/Packages/snappy-1.1.8-8.el9.$(uname -m).rpm" -o /tmp/snappy.rpm \
+    && rpm -i /tmp/snappy.rpm \
+    && rm -f /tmp/snappy.rpm
 RUN microdnf install -y \
   unzip \
   tar \
