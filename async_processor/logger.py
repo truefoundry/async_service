@@ -3,7 +3,7 @@ import os
 import sys
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
-log_level = logging.getLevelNamesMapping().get(LOG_LEVEL.upper(), logging.INFO)
+log_level = logging.getLevelName(LOG_LEVEL.upper())
 
 
 def _setup_logging(name: str):
@@ -16,7 +16,8 @@ def _setup_logging(name: str):
     )
     handler.setFormatter(formatter)
     logger.addHandler(handler)
+    return logger
 
 
-_setup_logging("async_processor")
+logger = _setup_logging("async_processor")
 _setup_logging("kafka")

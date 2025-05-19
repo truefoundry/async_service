@@ -350,8 +350,8 @@ class _Worker:
                 collector.set_output_status(output_message.status)
 
     async def _process_single_step(self, input_: Input, output: Optional[Output]):
-        start = _perf_counter_ms()
         with collect_input_message_fetch_metrics():
+            start = _perf_counter_ms()
             async with input_.get_input_message() as serialized_input_message:
                 fetch_time = _perf_counter_ms() - start
                 _INPUT_MESSAGE_FETCH_TIME_MS.labels(status="success").set(fetch_time)
