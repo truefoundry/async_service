@@ -43,7 +43,14 @@ _MESSAGE_PROCESSING_TIME_MS_HISTOGRAM = Histogram(
 
 MESSAGE_INPUT_LATENCY = Gauge(
     "tfy_async_processor_input_latency_ns",
-    "Latency incurreed in the input queue",
+    "Latency incurred in the input queue",
+    multiprocess_mode="livemax",
+)
+
+_INPUT_MESSAGE_FETCH_TIME_MS = Gauge(
+    "tfy_async_processor_input_message_fetch_time_ms",
+    "Time taken to pull input message in milliseconds",
+    labelnames=["status"],
     multiprocess_mode="livemax",
 )
 
