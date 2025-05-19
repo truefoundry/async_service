@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 
 LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")
 log_level = logging.getLevelName(LOG_LEVEL.upper())
@@ -13,3 +14,8 @@ formatter = logging.Formatter(
 )
 handler.setFormatter(formatter)
 logger.addHandler(handler)
+
+if LOG_LEVEL == "DEBUG":
+    logger = logging.getLogger("kafka")
+    logger.addHandler(logging.StreamHandler(sys.stdout))
+    logger.setLevel(logging.DEBUG)
