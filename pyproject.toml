@@ -4,8 +4,8 @@ version = "0.0.0"
 description = "An asynchronous task processing library"
 authors = ["debajyoti-truefoundry <debajyoti@truefoundry.com>"]
 readme = "README.md"
-packages = [{include = "async_processor", from = "."}]
-license = "MIT"
+packages = [{include = "async_processor"}]
+license = "Apache-2.0"
 
 [tool.poetry.dependencies]
 # TODO (chiragjn): Loosen these requirements for use as a library dependency. Sidecar method can choose to have exactly pinned versions
