@@ -38,7 +38,7 @@ _MESSAGE_PROCESSING_TIME_MS_HISTOGRAM = Histogram(
     + list(range(750, 5250, 250))  # 18
     + list(range(5500, 10500, 500))  # 10
     + list(range(11000, 16000, 1000))  # 5
-    + list(range(16000, 35000, 5000)),  # 4
+    + list(range(16000, 36000, 5000)),  # 4
 )
 
 MESSAGE_INPUT_LATENCY = Gauge(
