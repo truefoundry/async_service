@@ -1391,12 +1391,14 @@ referencing = ">=0.31.0"
 
 [[package]]
 name = "kafka-python"
-version = "2.2.7"
+version = "2.2.8"
 description = "Pure Python client for Apache Kafka"
 optional = true
 python-versions = "*"
-files = []
-develop = false
+files = [
+    {file = "kafka_python-2.2.8-py2.py3-none-any.whl", hash = "sha256:c9da7f9de8a38bb9721b16e184f74e93f254ba42b95081c3b51e1687fec1629d"},
+    {file = "kafka_python-2.2.8.tar.gz", hash = "sha256:ce6b9432532cc9c893fcc5dd9fde2a9cb4cefdd7af691963e41ee07430f939bb"},
+]
 
 [package.dependencies]
 crc32c = {version = "*", optional = true, markers = "extra == \"crc32c\""}
@@ -1411,12 +1413,6 @@ lz4 = ["lz4"]
 snappy = ["python-snappy"]
 testing = ["mock", "pytest", "pytest-mock", "pytest-timeout"]
 zstd = ["zstandard"]
-
-[package.source]
-type = "git"
-url = "https://github.com/dpkp/kafka-python.git"
-reference = "452e354c5d405de54f5f06fe0857be87cf7dd040"
-resolved_reference = "452e354c5d405de54f5f06fe0857be87cf7dd040"
 
 [[package]]
 name = "keyring"
@@ -3239,4 +3235,4 @@ sqs = ["boto3"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.8,<3.13"
-content-hash = "ac35b447ab9fa29b19f3a0e49acc3b62c07897eed6f86d86a4a3b95d5b6f3853"
+content-hash = "1d6cfc81a86ad73dcb09d9ef89eb46385f0e350dae0003c1a33685b10553c307"
