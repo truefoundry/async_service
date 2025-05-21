@@ -26,7 +26,7 @@ cryptography = ">=41.0.6,<43.1.0"
 # be careful while changing versions
 nats-py = { version = "2.6.0", optional = true }
 boto3 =  { version = ">=1.28.16,<1.29.0", optional = true }
-kafka-python = { git = "https://github.com/dpkp/kafka-python.git", rev = "452e354c5d405de54f5f06fe0857be87cf7dd040", optional = true, extras = ["crc32c", "lz4", "snappy", "zstd"] }
+kafka-python = { version = "2.2.8", optional = true, extras = ["crc32c", "lz4", "snappy", "zstd"] }
 aio-pika = {version = ">=9.4.0,<10.0.0", optional = true}
 
 [tool.poetry.extras]
